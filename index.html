@@ -1,290 +1,377 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>中东货币兑换 · Aurora 版</title>
-  <script src="./env.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    :root {
-      --bg1:#09121f;
-      --bg2:#0f1f36;
-      --card:rgba(255,255,255,.08);
-      --line:rgba(255,255,255,.14);
-      --txt:#eef6ff;
-      --muted:#aac2e6;
-      --pri:#67a7ff;
-      --pri2:#7ef0d1;
-      --warn:#ffcc66;
-      --danger:#ff7f8f;
-      --ok:#53d89c;
-      --shadow:0 16px 60px rgba(0,0,0,.28);
-      --radius:22px;
-    }
-    *{box-sizing:border-box;margin:0;padding:0;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
-    body{
-      min-height:100vh;color:var(--txt);
-      background:
-        radial-gradient(circle at top left, rgba(103,167,255,.28), transparent 30%),
-        radial-gradient(circle at top right, rgba(126,240,209,.18), transparent 32%),
-        linear-gradient(160deg,var(--bg1),var(--bg2));
-      padding:18px;
-    }
-    .shell{max-width:1100px;margin:0 auto}
-    .glass{background:var(--card);backdrop-filter:blur(18px);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:var(--radius)}
-    .hero{padding:24px 22px 18px;margin-bottom:16px;position:relative;overflow:hidden}
-    .hero:before{content:'';position:absolute;right:-60px;top:-60px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle, rgba(126,240,209,.26), transparent 65%)}
-    .title{font-size:34px;font-weight:800;letter-spacing:.5px}
-    .subtitle{margin-top:8px;color:var(--muted);font-size:14px}
-    .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
-    .chip,.btn{border:none;border-radius:16px;padding:12px 16px;color:#fff;cursor:pointer}
-    .chip{background:rgba(255,255,255,.08);border:1px solid var(--line)}
-    .btn{background:linear-gradient(90deg,var(--pri),#4d7fff);font-weight:700}
-    .btn.alt{background:linear-gradient(90deg,#20324e,#1b2740)}
-    .btn.ghost{background:rgba(255,255,255,.06);border:1px solid var(--line)}
-    .grid{display:grid;grid-template-columns:320px 1fr;gap:16px}
-    .panel{padding:18px}
-    .status{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:16px;margin-bottom:16px;background:rgba(255,255,255,.06);border:1px solid var(--line)}
-    .dot{width:10px;height:10px;border-radius:50%;background:#999}
-    .dot.ok{background:var(--ok)} .dot.warn{background:var(--warn)} .dot.err{background:var(--danger)}
-    .tabs{display:flex;gap:10px;margin-bottom:14px}
-    .tab{flex:1;padding:11px 12px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--txt);cursor:pointer}
-    .tab.active{background:linear-gradient(90deg,var(--pri),#4d7fff);border-color:transparent}
-    .field{margin-bottom:14px}
-    label{display:block;color:var(--muted);font-size:13px;margin-bottom:7px}
-    input,select{width:100%;padding:13px 14px;border-radius:16px;border:1px solid var(--line);background:rgba(8,17,29,.6);color:#fff;font-size:15px}
-    input:focus,select:focus{outline:none;border-color:rgba(103,167,255,.8)}
-    .hint{font-size:12px;color:var(--muted);margin-top:8px}
-    .hidden{display:none!important}
-    .nav{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
-    .nav button{padding:12px;border-radius:16px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:#fff;cursor:pointer}
-    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
-    .balance{padding:16px;border-radius:18px;background:rgba(255,255,255,.05);border:1px solid var(--line)}
-    .balance b{font-size:22px;display:block;margin-top:6px}
-    .section{padding:18px}
-    .section h3{margin-bottom:14px}
-    .notice{padding:12px 14px;border-radius:14px;background:rgba(255,204,102,.08);border:1px solid rgba(255,204,102,.2);color:#ffe1a0;margin-bottom:14px}
-    .orders{max-height:420px;overflow:auto;line-height:1.75;color:#dce9fb}
-    .footer{padding:16px;text-align:center;color:var(--muted);font-size:12px}
-    .admin-actions{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
-    .admin-actions button{padding:9px 12px;border-radius:12px;background:#21314b;color:#fff;border:none;cursor:pointer}
-    @media (max-width:900px){.grid{grid-template-columns:1fr}.nav{grid-template-columns:repeat(2,1fr)}}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>中东货币兑换</title>
+<script src="./env.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#0a1628;--bg2:#0f1f38;--card:rgba(255,255,255,.07);--border:rgba(255,255,255,.12);--txt:#dce9ff;--muted:#8aaad4;--blue:#4d9fff;--blue2:#6fb3ff;--gold:#f5c842;--green:#4ade80;--red:#f87171;--radius:20px}
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+body{min-height:100vh;color:var(--txt);background:linear-gradient(135deg,var(--bg),var(--bg2));display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+
+/* Full-screen login panel */
+#login-screen{flex-direction:column;width:100%;max-width:440px}
+.login-box{width:100%;background:var(--card);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:var(--radius);padding:40px 32px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.login-title{font-size:28px;font-weight:800;text-align:center;background:linear-gradient(90deg,#4d9fff,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:6px}
+.login-sub{text-align:center;color:var(--muted);font-size:14px;margin-bottom:30px}
+.field{margin-bottom:16px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:7px}
+input,select{width:100%;padding:14px 16px;border-radius:14px;border:1px solid var(--border);background:rgba(0,0,0,.4);color:#fff;font-size:15px;transition:border .2s}
+input:focus,select:focus{outline:none;border-color:var(--blue)}
+.btn{width:100%;padding:14px;border-radius:14px;border:none;background:linear-gradient(90deg,var(--blue),#3b7dd8);color:#fff;font-size:16px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.btn:hover{opacity:.88}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.hint{font-size:12px;color:var(--muted);text-align:center;margin-top:14px}
+.tab-row{display:flex;gap:10px;margin-bottom:24px}
+.tab{flex:1;padding:11px;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--txt);cursor:pointer;text-align:center}
+.tab.active{background:linear-gradient(90deg,var(--blue),#3b7dd8);border-color:transparent}
+
+/* Main dashboard - hidden until login */
+#main-screen{display:none;flex-direction:column;width:100%;max-width:1200px}
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;background:var(--card);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px}
+.top-title{font-size:22px;font-weight:800;background:linear-gradient(90deg,var(--blue),#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#4ade80;display:inline-block;margin-right:6px}
+.status-text{font-size:13px;color:var(--muted)}
+.main-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:900px){.main-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.main-grid{grid-template-columns:1fr}}
+.card{background:var(--card);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:var(--radius);padding:22px}
+.card-title{font-size:14px;color:var(--muted);margin-bottom:16px;font-weight:600}
+.balance-big{font-size:36px;font-weight:800;color:#fff;margin-bottom:4px}
+.balance-label{font-size:12px;color:var(--muted)}
+.currency-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.currency-item{background:rgba(0,0,0,.25);border-radius:12px;padding:12px;text-align:center}
+.currency-item span{display:block;font-size:12px;color:var(--muted)}
+.currency-item b{font-size:18px;color:#fff;margin-top:4px;display:block}
+
+/* Nav tabs inside main */
+.nav-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.nav-btn{padding:10px 16px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--txt);cursor:pointer;font-size:13px}
+.nav-btn:hover{background:rgba(77,159,255,.15)}
+.nav-btn.active{background:linear-gradient(90deg,var(--blue),#3b7dd8);border-color:transparent}
+
+/* Forms inside cards */
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+.form-group input,.form-group select{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:rgba(0,0,0,.4);color:#fff;font-size:14px}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:var(--blue)}
+.btn-sm{width:auto;padding:10px 20px;border-radius:12px;border:none;background:linear-gradient(90deg,var(--blue),#3b7dd8);color:#fff;font-size:14px;font-weight:600;cursor:pointer}
+.btn-sm:disabled{opacity:.4;cursor:not-allowed}
+.notice-box{padding:12px 14px;border-radius:12px;background:rgba(255,204,100,.08);border:1px solid rgba(255,204,100,.2);color:#ffe1a0;font-size:13px;margin-bottom:14px}
+
+/* Admin approve buttons */
+.approve-btn{padding:8px 16px;border-radius:10px;border:none;cursor:pointer;font-size:13px;margin-right:6px}
+.approve-btn.ok{background:linear-gradient(90deg,var(--green),#22c55e);color:#fff}
+.approve-btn.no{background:linear-gradient(90deg,var(--red),#ef4444);color:#fff}
+
+/* Order list */
+.order-list{max-height:400px;overflow:auto;font-size:13px;line-height:1.8;color:#c8ddf5}
+.order-item{padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.order-status{font-size:11px;padding:3px 8px;border-radius:8px;margin-left:6px}
+.order-status.done{background:rgba(74,222,128,.15);color:#4ade80}
+.order-status.pending{background:rgba(255,204,100,.15);color:#f5c842}
+
+/* Hidden utility */
+.hidden{display:none!important}
+.logout-btn{background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--muted);padding:8px 16px;border-radius:12px;cursor:pointer;font-size:13px}
+</style>
 </head>
 <body>
-  <div class="shell">
-    <div class="hero glass">
-      <div class="title">中东货币兑换</div>
-      <div class="subtitle">Aurora 新界面 · USDT 与中东本地货币双向兑换</div>
-      <div class="toolbar">
-        <button class="chip" onclick="setLang('cn')">中文</button>
-        <button class="chip" onclick="setLang('en')">English</button>
-        <button class="chip" onclick="setLang('ar')">العربية</button>
-        <button class="btn ghost" onclick="retryInit()">重新连接</button>
-        <button class="btn alt" onclick="openNotice()">公告</button>
-        <button class="btn alt" onclick="openService()">客服</button>
-      </div>
+
+<!-- LOGIN SCREEN (full page, no sidebar) -->
+<div id="login-screen" style="display:flex">
+  <div class="login-box">
+    <div class="login-title">中东货币兑换</div>
+    <div class="login-sub">USDT ↔ 中东本地货币 · 双向实时兑换</div>
+    <div class="tab-row">
+      <div class="tab active" id="loginTab" onclick="switchTab('login')">登录</div>
+      <div class="tab" id="regTab" onclick="switchTab('reg')">注册</div>
     </div>
-
-    <div class="grid">
-      <div class="panel glass">
-        <div id="statusMsg" class="status"><span class="dot warn"></span><span>正在初始化...</span></div>
-        <div class="tabs">
-          <button id="loginTab" class="tab active" onclick="switchTab('login')">登录</button>
-          <button id="regTab" class="tab" onclick="switchTab('reg')">注册</button>
-        </div>
-        <div id="loginPanel">
-          <div class="field"><label>账号</label><input id="login_user" oninput="validateLogin()" placeholder="输入账号" /></div>
-          <div class="field"><label>密码</label><input id="login_pwd" type="password" oninput="validateLogin()" placeholder="输入密码" /></div>
-          <button id="btn_login" class="btn" data-original-text="登录" onclick="safeLogin()" disabled>登录</button>
-          <div class="hint">密码至少 6 位，登录成功后会显示钱包和功能菜单。</div>
-        </div>
-        <div id="regPanel" class="hidden">
-          <div class="notice">推荐人可获得下级手续费 50% 返佣</div>
-          <div class="field"><label>账号</label><input id="reg_user" oninput="validateReg()" /></div>
-          <div class="field"><label>密码</label><input id="reg_pwd" type="password" oninput="validateReg()" /></div>
-          <div class="field"><label>Telegram / WhatsApp</label><input id="reg_phone" /></div>
-          <div class="field"><label>推荐人（选填）</label><input id="reg_ref" /></div>
-          <button id="btn_reg" class="btn" data-original-text="注册" onclick="safeRegister()" disabled>注册</button>
-        </div>
-      </div>
-
-      <div>
-        <div id="mainContent" class="hidden">
-          <div id="nav-bar" class="nav glass" style="padding:12px;">
-            <button onclick="show('wallet')">钱包</button>
-            <button onclick="show('rate')">汇率</button>
-            <button onclick="show('topup')">充值</button>
-            <button onclick="show('usd2local')">U→当地币</button>
-            <button onclick="show('local2usd')">当地币→U</button>
-            <button onclick="show('withdraw')">提现</button>
-            <button onclick="show('order')">订单</button>
-            <button onclick="show('ref')">推广</button>
-            <button id="adminBtn" onclick="show('admin')" style="display:none">管理</button>
-            <button onclick="logout()">退出</button>
-          </div>
-
-          <div id="wallet" class="section glass">
-            <h3>我的钱包</h3>
-            <div class="cards" id="currencyBalances"></div>
-          </div>
-
-          <div id="rate" class="section glass hidden">
-            <h3>实时汇率</h3>
-            <div class="orders" id="rate_body"></div>
-          </div>
-
-          <div id="topup" class="section glass hidden">
-            <h3>USDT 充值（TRC20）</h3>
-            <div class="notice">转账备注：<b id="tip_mark">USER</b></div>
-            <div class="field"><label>充值地址</label><input id="topAddrInput" readonly /></div>
-            <div class="field"><label>充值金额</label><input type="number" id="top_amt" min="10" /></div>
-            <button class="btn" data-original-text="提交充值申请" onclick="safeSubmitTopup()">提交充值申请</button>
-          </div>
-
-          <div id="usd2local" class="section glass hidden">
-            <h3>USDT → 当地货币</h3>
-            <div class="notice">最低 100 USDT</div>
-            <div class="field"><label>USDT 数量</label><input type="number" id="u2l_amt" min="100" oninput="calcUsdToLocal()" /></div>
-            <div class="field"><label>币种</label><select id="u2l_cur" onchange="calcUsdToLocal()"></select></div>
-            <div class="field"><label>速度</label><select id="u2l_speed" onchange="calcUsdToLocal()"><option value="24h">24小时到账 3%</option><option value="72h">72小时到账 1%</option></select></div>
-            <div class="field"><label>预计到账</label><input id="u2l_result" readonly /></div>
-            <button class="btn" data-original-text="提交兑换" onclick="safeSubmitU2L()">提交兑换</button>
-          </div>
-
-          <div id="local2usd" class="section glass hidden">
-            <h3>当地货币 → USDT</h3>
-            <div class="notice">最低等值 100 USDT</div>
-            <div class="field"><label>币种</label><select id="l2u_cur" onchange="calcLocalToUsd()"></select></div>
-            <div class="field"><label>当地货币数量</label><input type="number" id="l2u_amt" oninput="calcLocalToUsd()" /></div>
-            <div class="field"><label>速度</label><select id="l2u_speed" onchange="calcLocalToUsd()"><option value="24h">24小时到账 3%</option><option value="72h">72小时到账 1%</option></select></div>
-            <div class="field"><label>预计获得 USDT</label><input id="l2u_result" readonly /></div>
-            <button class="btn" data-original-text="提交兑换" onclick="safeSubmitL2U()">提交兑换</button>
-          </div>
-
-          <div id="withdraw" class="section glass hidden">
-            <h3>提现 USDT（TRC20）</h3>
-            <div class="field"><label>提现金额</label><input type="number" id="wd_amt" min="10" /></div>
-            <div class="field"><label>TRC20 地址</label><input id="wd_addr" oninput="checkAddr()" /></div>
-            <button id="btn_wd" class="btn" data-original-text="提交提现" onclick="safeSubmitWD()" disabled>提交提现</button>
-          </div>
-
-          <div id="order" class="section glass hidden"><h3>我的订单</h3><div id="order_list" class="orders"></div></div>
-          <div id="ref" class="section glass hidden"><h3>推广返佣</h3><div class="orders">推荐码：<b id="ref_code"></b><br>下级人数：<b id="ref_count">0</b><br><br><div id="ref_list"></div></div></div>
-          <div id="admin" class="section glass hidden"><h3>管理后台</h3><div class="admin-actions"><button onclick="adminTab('topupCheck')">充值待审</button><button onclick="adminTab('topup')">充值记录</button><button onclick="adminTab('u2l')">U兑币待审</button><button onclick="adminTab('l2u')">币兑U待审</button><button onclick="adminTab('withdraw')">提现待审</button><button onclick="adminTab('ref')">推广统计</button></div><div id="admin_content" class="orders"></div></div>
-        </div>
-      </div>
+    <div id="loginPanel">
+      <div class="field"><label>账号</label><input id="login_user" oninput="validateLogin()" placeholder="纯字母数字，不要带@"></div>
+      <div class="field"><label>密码</label><input type="password" id="login_pwd" oninput="validateLogin()" placeholder="至少6位"></div>
+      <button id="btn_login" class="btn" data-orig="登录" onclick="safeLogin()" disabled>登录</button>
+      <div class="hint">管理员账号：admin / tangbohu1122</div>
     </div>
+    <div id="regPanel" class="hidden">
+      <div class="notice-box">推荐人可获得下级手续费50%返佣</div>
+      <div class="field"><label>账号</label><input id="reg_user" oninput="validateReg()" placeholder="纯字母数字"></div>
+      <div class="field"><label>密码</label><input type="password" id="reg_pwd" oninput="validateReg()" placeholder="至少6位"></div>
+      <div class="field"><label>Telegram / WhatsApp</label><input id="reg_phone" placeholder="选填"></div>
+      <div class="field"><label>推荐人</label><input id="reg_ref" placeholder="选填"></div>
+      <button id="btn_reg" class="btn" data-orig="注册" onclick="safeRegister()" disabled>注册</button>
+    </div>
+  </div>
+</div>
 
-    <div class="footer">Aurora 风格前端 · 安全 · 快捷 · 稳定</div>
+<!-- MAIN DASHBOARD (full page after login) -->
+<div id="main-screen">
+  <div class="top-bar">
+    <div class="top-title">中东货币兑换</div>
+    <div>
+      <span class="status-dot"></span><span class="status-text">已连接</span>
+      <span id="userNameDisplay" style="margin-left:16px;color:var(--muted);font-size:13px"></span>
+      <button class="logout-btn" onclick="logout()">退出</button>
+    </div>
   </div>
 
-  <script>
-    const SUPABASE_URL = window.ENV?.SUPABASE_URL || '';
-    const SUPABASE_ANON_KEY = window.ENV?.SUPABASE_ANON_KEY || '';
-    const CURRENCIES = ['IRR','SAR','AED','KWD','QAR','EGP','IQD','JOD','OMR'];
-    const CURRENCY_NAMES = {IRR:'伊朗里亚尔',SAR:'沙特里亚尔',AED:'阿联酋迪拉姆',KWD:'科威特第纳尔',QAR:'卡塔尔里亚尔',EGP:'埃及镑',IQD:'伊拉克第纳尔',JOD:'约旦第纳尔',OMR:'阿曼里亚尔'};
-    const TRC20_ADDR = '0x2395d729411aF3a4D8f9FBe5ad76B8A052aeD2A8';
-    const MIN_EXCHANGE = 100;
-    const FEE_RATE = { '24h': 0.03, '72h': 0.01 };
-    let sbClient = null, currUser = null, lang = 'cn', rateCache = {}, adminSubscription = null, submitLock = false;
+  <div class="main-grid">
+    <!-- Wallet card -->
+    <div class="card" style="grid-column:1">
+      <div class="card-title">💰 我的钱包</div>
+      <div class="balance-big" id="bal_usdt">0.00</div>
+      <div class="balance-label">USDT</div>
+      <div class="currency-grid" id="currencyBalances"></div>
+    </div>
 
-    function tMsg(cn,en,ar){ if(lang==='en') return en; if(lang==='ar') return ar; return cn; }
-    function setStatus(type, text){ const el=document.getElementById('statusMsg'); const c=type==='ok'?'ok':type==='err'?'err':'warn'; el.innerHTML=`<span class="dot ${c}"></span><span>${text}</span>`; }
-    function toast(msg){ alert(msg); }
-    function setLang(l){ lang=l; }
-    function retryInit(){ initSupabase(); }
-    function openNotice(){ alert('最低兑换 100 USDT\n24h 手续费 3%，72h 仅 1%\n推广返佣 50% 手续费'); }
-    function openService(){ alert('联系客服 Telegram: @ZDHBDHKF'); }
-    function withLock(fn){ return async (...args)=>{ if(submitLock) return toast(tMsg('操作处理中，请稍候','Processing','جاري المعالجة')); submitLock=true; try{return await fn(...args)} finally{submitLock=false} }; }
-    function setBtnLoading(btn,text,loading){ if(!btn) return; btn.disabled=loading; btn.innerText=loading?text:btn.dataset.originalText; }
-    function switchTab(t){ document.getElementById('loginPanel').classList.toggle('hidden', t!=='login'); document.getElementById('regPanel').classList.toggle('hidden', t!=='reg'); document.getElementById('loginTab').classList.toggle('active', t==='login'); document.getElementById('regTab').classList.toggle('active', t==='reg'); }
-    function validateLogin(){ const u=login_user.value.trim(), p=login_pwd.value.trim(); btn_login.disabled=!(u && p.length>=6); }
-    function validateReg(){ const u=reg_user.value.trim(), p=reg_pwd.value.trim(); btn_reg.disabled=!(u && p.length>=6); }
+    <!-- Rate card -->
+    <div class="card">
+      <div class="card-title">📊 实时汇率 (1 USDT)</div>
+      <div id="rate_body" style="font-size:13px;line-height:1.8"></div>
+    </div>
 
-    async function initSupabase(){
-      setStatus('warn','正在初始化...');
-      try{
-        if(!window.supabase) throw new Error('Supabase SDK 加载失败');
-        if(!SUPABASE_URL || !SUPABASE_ANON_KEY) throw new Error('缺少 Supabase 配置');
-        sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        const { error } = await sbClient.from('users').select('id').limit(1);
-        if(error) throw error;
-        setStatus('ok','✅ 连接成功');
-        await autoLogin();
-      }catch(e){
-        setStatus('err','❌ '+(e.message||'连接失败'));
-      }
-    }
+    <!-- Topup card -->
+    <div class="card">
+      <div class="card-title">💵 充值 USDT</div>
+      <div class="notice-box">地址：<b id="topAddrDisplay"></b></div>
+      <div class="form-group"><input type="number" id="top_amt" placeholder="充值金额(≥10)" min="10"></div>
+      <button class="btn-sm" onclick="safeSubmitTopup()">提交充值申请</button>
+    </div>
 
-    const safeLogin = withLock(async ()=>{
-      let btn=document.getElementById('btn_login'); setBtnLoading(btn,'登录中...',true);
-      try{
-        const u=login_user.value.trim(), p=login_pwd.value.trim();
-        if(!u || !p) return toast('请输入账号密码');
-        const email=`${u}@mid-east-exchange.com`;
-        const { error } = await sbClient.auth.signInWithPassword({ email, password:p });
-        if(error) return toast(error.message||'登录失败');
-        const { data:user } = await sbClient.from('users').select('*').eq('username',u).single();
-        currUser=user; document.getElementById('mainContent').classList.remove('hidden'); show('wallet');
-        const { data:{user:suser} } = await sbClient.auth.getUser();
-        document.getElementById('adminBtn').style.display=suser?.app_metadata?.role==='admin'?'block':'none';
-        toast('登录成功');
-      } finally { setBtnLoading(btn,'登录',false); }
-    });
+    <!-- USD to Local card -->
+    <div class="card">
+      <div class="card-title">📤 USDT → 当地货币</div>
+      <div class="notice-box">最低100 USDT</div>
+      <div class="form-group"><input type="number" id="u2l_amt" placeholder="USDT数量" oninput="calcU2L()"></div>
+      <div class="form-group"><select id="u2l_cur" onchange="calcU2L()"></select></div>
+      <div class="form-group"><select id="u2l_speed" onchange="calcU2L()"><option value="24h">24h到账3%</option><option value="72h">72h到账1%</option></select></div>
+      <div class="form-group"><label>预计到账</label><input id="u2l_result" readonly></div>
+      <button class="btn-sm" onclick="safeSubmitU2L()">提交兑换</button>
+    </div>
 
-    const safeRegister = withLock(async ()=>{
-      let btn=document.getElementById('btn_reg'); setBtnLoading(btn,'注册中...',true);
-      try{
-        const u=reg_user.value.trim(), p=reg_pwd.value.trim(), phone=reg_phone.value.trim(), ref=reg_ref.value.trim();
-        if(!u || !p) return toast('请填写完整');
-        const { data:exist } = await sbClient.from('users').select('username').eq('username',u).single();
-        if(exist) return toast('账号已存在');
-        if(ref){ const { data:ru } = await sbClient.from('users').select('username').eq('username',ref).single(); if(!ru) return toast('推荐人不存在'); }
-        const email=`${u}@mid-east-exchange.com`;
-        const { data:auth, error } = await sbClient.auth.signUp({ email, password:p, options:{ data:{ username:u, phone, ref } } });
-        if(error) return toast(error.message||'注册失败');
-        await sbClient.from('users').insert({ id:auth.user.id, username:u, phone, ref, usdt:0, irr:0, sar:0, aed:0, kwd:0, qar:0, egp:0, iqd:0, jod:0, omr:0, total_reward:0 });
-        toast('注册成功，请登录'); switchTab('login');
-      } finally { setBtnLoading(btn,'注册',false); }
-    });
+    <!-- Local to USD card -->
+    <div class="card">
+      <div class="card-title">📥 当地货币 → USDT</div>
+      <div class="notice-box">最低等值100 USDT</div>
+      <div class="form-group"><select id="l2u_cur" onchange="calcL2U()"></select></div>
+      <div class="form-group"><input type="number" id="l2u_amt" placeholder="当地货币数量" oninput="calcL2U()"></div>
+      <div class="form-group"><select id="l2u_speed" onchange="calcL2U()"><option value="24h">24h到账3%</option><option value="72h">72h到账1%</option></select></div>
+      <div class="form-group"><label>预计获得USDT</label><input id="l2u_result" readonly></div>
+      <button class="btn-sm" onclick="safeSubmitL2U()">提交兑换</button>
+    </div>
 
-    async function logout(){ await sbClient.auth.signOut(); currUser=null; document.getElementById('mainContent').classList.add('hidden'); }
-    async function autoLogin(){ try{ const { data:{session} } = await sbClient.auth.getSession(); if(session){ const { data:user } = await sbClient.from('users').select('*').eq('id',session.user.id).single(); if(user){ currUser=user; document.getElementById('mainContent').classList.remove('hidden'); show('wallet'); } } }catch(e){} }
-    function show(id){ document.querySelectorAll('.section').forEach(i=>i.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); if(id==='wallet')loadWallet(); if(id==='topup')loadTopup(); if(id==='order')loadOrder(); if(id==='ref')loadRef(); if(id==='admin')adminTab('topupCheck'); if(id==='rate')fetchRates(); }
-    async function loadWallet(){ if(!currUser) return; const { data:u } = await sbClient.from('users').select('*').eq('id',currUser.id).single(); if(u) currUser=u; let html=`<div class="balance"><span>USDT</span><b>${Number(currUser.usdt||0).toFixed(2)}</b></div>`; CURRENCIES.forEach(c=> html += `<div class="balance"><span>${c}</span><b>${Number(currUser[c.toLowerCase()]||0).toFixed(2)}</b></div>`); currencyBalances.innerHTML=html; }
-    function loadTopup(){ tip_mark.innerText=currUser?.username||'USER'; topAddrInput.value=TRC20_ADDR; }
-    const safeSubmitTopup = withLock(async ()=>{ const btn=document.querySelector('#topup .btn'); setBtnLoading(btn,'提交中...',true); try{ const amt=+top_amt.value; if(amt<10) return toast('最低10U'); await sbClient.from('topups').insert({user_id:currUser.id,amount:amt,status:'待审核',created_at:new Date().toISOString()}); toast('已提交，待审核'); show('order'); } finally{ setBtnLoading(btn,'提交充值申请',false);} });
-    async function fetchRates(){ try{ const r=await fetch('https://open.er-api.com/v6/latest/USD'); const d=await r.json(); let h=''; CURRENCIES.forEach(c=>{ rateCache[c]=d.rates[c]||1; h += `${c} - ${CURRENCY_NAMES[c]}：${Number(rateCache[c]).toFixed(4)}<br>`; }); rate_body.innerHTML=h; calcUsdToLocal(); calcLocalToUsd(); }catch(e){ rate_body.innerHTML='汇率加载失败'; } }
-    function calcUsdToLocal(){ const amt=+u2l_amt.value||0, cur=u2l_cur.value, fee=FEE_RATE[u2l_speed.value], r=rateCache[cur]||1; u2l_result.value=(amt*r*(1-fee)).toFixed(2); }
-    function calcLocalToUsd(){ const amt=+l2u_amt.value||0, cur=l2u_cur.value, fee=FEE_RATE[l2u_speed.value], r=rateCache[cur]||1; l2u_result.value=(amt/r*(1-fee)).toFixed(2); }
-    const safeSubmitU2L = withLock(async ()=>{ const btn=document.querySelector('#usd2local .btn'); setBtnLoading(btn,'提交中...',true); try{ const amt=+u2l_amt.value, cur=u2l_cur.value, speed=u2l_speed.value, fee=FEE_RATE[speed]; if(amt<MIN_EXCHANGE) return toast(`最低${MIN_EXCHANGE}U`); if(amt>currUser.usdt) return toast('余额不足'); await sbClient.from('users').update({usdt:currUser.usdt-amt}).eq('id',currUser.id); await sbClient.from('u2l_orders').insert({user_id:currUser.id,amount:amt,currency:cur,speed,fee,submit_rate:rateCache[cur]||1,status:'待审核',created_at:new Date().toISOString()}); const { data:u }=await sbClient.from('users').select('*').eq('id',currUser.id).single(); currUser=u; toast('已提交，待审核'); show('order'); } finally{ setBtnLoading(btn,'提交兑换',false);} });
-    const safeSubmitL2U = withLock(async ()=>{ const btn=document.querySelector('#local2usd .btn'); setBtnLoading(btn,'提交中...',true); try{ const cur=l2u_cur.value, amt=+l2u_amt.value, speed=l2u_speed.value, fee=FEE_RATE[speed], r=rateCache[cur]||1, usdt=amt/r; if(usdt<MIN_EXCHANGE) return toast(`最低等值${MIN_EXCHANGE}U`); const f=cur.toLowerCase(); if(amt>(currUser[f]||0)) return toast('余额不足'); await sbClient.from('users').update({[f]:currUser[f]-amt}).eq('id',currUser.id); await sbClient.from('l2u_orders').insert({user_id:currUser.id,amount:amt,currency:cur,speed,fee,submit_rate:r,status:'待审核',created_at:new Date().toISOString()}); const { data:u }=await sbClient.from('users').select('*').eq('id',currUser.id).single(); currUser=u; toast('已提交，待审核'); show('order'); } finally{ setBtnLoading(btn,'提交兑换',false);} });
-    function checkAddr(){ btn_wd.disabled=!/^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(wd_addr.value.trim()); }
-    const safeSubmitWD = withLock(async ()=>{ let btn=btn_wd; setBtnLoading(btn,'提交中...',true); try{ const amt=+wd_amt.value, addr=wd_addr.value.trim(); if(amt<=0||amt>currUser.usdt) return toast('余额不足'); await sbClient.from('users').update({usdt:currUser.usdt-amt}).eq('id',currUser.id); await supabase.from('withdraws').insert({user_id:currUser.id,amount:amt,address:addr,status:'待处理',created_at:new Date().toISOString()}); const { data:u }=await sbClient.from('users').select('*').eq('id',currUser.id).single(); currUser=u; toast('提现已提交'); show('order'); } finally{ setBtnLoading(btn,'提交提现',false);} });
-    async function loadOrder(){ const [top,u2l,l2u,wd,reward]=await Promise.all([sbClient.from('topups').select('*').eq('user_id',currUser.id).order('created_at',{ascending:false}),sbClient.from('u2l_orders').select('*').eq('user_id',currUser.id).order('created_at',{ascending:false}),sbClient.from('l2u_orders').select('*').eq('user_id',currUser.id).order('created_at',{ascending:false}),sbClient.from('withdraws').select('*').eq('user_id',currUser.id).order('created_at',{ascending:false}),sbClient.from('reward_logs').select('*').eq('to_user_id',currUser.id).order('created_at',{ascending:false}).limit(10)]); let h=''; top.data?.forEach(o=>h+=`${new Date(o.created_at).toLocaleString()} 充值 ${o.amount}U ${o.status}<br>`); u2l.data?.forEach(o=>h+=`${new Date(o.created_at).toLocaleString()} U→${o.currency} ${o.amount}U ${o.status}<br>`); l2u.data?.forEach(o=>h+=`${new Date(o.created_at).toLocaleString()} ${o.currency}→U ${o.amount} ${o.currency} ${o.status}<br>`); wd.data?.forEach(o=>h+=`${new Date(o.created_at).toLocaleString()} 提现 ${o.amount}U ${o.status}<br>`); reward.data?.forEach(r=>h+=`返佣 +${Number(r.amount_usdt||0).toFixed(2)}U<br>`); order_list.innerHTML=h||'暂无记录'; }
-    async function loadRef(){ ref_code.innerText=currUser.username; const { count }=await sbClient.from('users').select('*',{count:'exact',head:true}).eq('ref',currUser.username); ref_count.innerText=count||0; const { data:list }=await sbClient.from('users').select('username').eq('ref',currUser.username); ref_list.innerHTML=list?.map(i=>i.username).join('<br>')||'暂无下级'; }
-    async function adminTab(t){ let h=''; if(t==='topupCheck'){ let {data}=await sbClient.from('topups').select('*, users(username)').eq('status','待审核'); data?.forEach(o=>h+=`${o.users.username} 充值${o.amount}U <button onclick="approveTopup('${o.id}')">通过</button> <button onclick="rejectTopup('${o.id}')">驳回</button><br>`); } else if(t==='topup'){ let {data}=await sbClient.from('topups').select('*, users(username)').order('created_at',{ascending:false}); data?.forEach(o=>h+=`${o.users.username} 充值${o.amount}U ${o.status}<br>`); } else if(t==='u2l'){ let {data}=await sbClient.from('u2l_orders').select('*, users(username)').eq('status','待审核'); data?.forEach(o=>h+=`${o.users.username} U→${o.currency}${o.amount}U <button onclick="approveU2L('${o.id}')">通过</button> <button onclick="rejectU2L('${o.id}')">驳回</button><br>`); } else if(t==='l2u'){ let {data}=await sbClient.from('l2u_orders').select('*, users(username)').eq('status','待审核'); data?.forEach(o=>h+=`${o.users.username} ${o.currency}→U <button onclick="approveL2U('${o.id}')">通过</button> <button onclick="rejectL2U('${o.id}')">驳回</button><br>`); } else if(t==='withdraw'){ let {data}=await sbClient.from('withdraws').select('*, users(username)').eq('status','待处理'); data?.forEach(o=>h+=`${o.users.username} 提现${o.amount}U <button onclick="approveWD('${o.id}')">已转</button> <button onclick="rejectWD('${o.id}')">驳回</button><br>`); } else if(t==='ref'){ let {data:us}=await sbClient.from('users').select('username'); for(const u of us||[]){ let {count}=await sbClient.from('users').select('*',{count:'exact',head:true}).eq('ref',u.username); h+=`${u.username} | 下级：${count||0}<br>`; } } admin_content.innerHTML=h||'无数据'; }
-    async function approveTopup(id){ await sbClient.rpc('approve_topup',{order_id:id}); adminTab('topupCheck'); }
-    async function rejectTopup(id){ await sbClient.rpc('reject_topup',{order_id:id}); adminTab('topupCheck'); }
-    async function approveU2L(id){ await sbClient.rpc('approve_u2l',{order_id:id}); adminTab('u2l'); }
-    async function rejectU2L(id){ await sbClient.rpc('reject_u2l',{order_id:id}); adminTab('u2l'); }
-    async function approveL2U(id){ await sbClient.rpc('approve_l2u',{order_id:id}); adminTab('l2u'); }
-    async function rejectL2U(id){ await sbClient.rpc('reject_l2u',{order_id:id}); adminTab('l2u'); }
-    async function approveWD(id){ await sbClient.rpc('approve_withdraw',{order_id:id}); adminTab('withdraw'); }
-    async function rejectWD(id){ await sbClient.rpc('reject_withdraw',{order_id:id}); adminTab('withdraw'); }
+    <!-- Withdraw card -->
+    <div class="card">
+      <div class="card-title">🏧 提现 USDT</div>
+      <div class="form-group"><input type="number" id="wd_amt" placeholder="提现金额"></div>
+      <div class="form-group"><input id="wd_addr" placeholder="TRC20地址(以T开头)" oninput="checkAddr()"></div>
+      <button id="btn_wd" class="btn-sm" onclick="safeSubmitWD()" disabled>提交提现</button>
+    </div>
 
-    window.onload=()=>{
-      let html='';
-      html += `<div class="balance"><span>USDT</span><b id="bal_usdt">0.00</b></div>`;
-      CURRENCIES.forEach(c=> html += `<div class="balance"><span>${c}</span><b id="bal_${c}">0.00</b></div>`);
-      currencyBalances.innerHTML=html;
-      CURRENCIES.forEach(c=>{ u2l_cur.innerHTML += `<option value="${c}">${c} - ${CURRENCY_NAMES[c]}</option>`; l2u_cur.innerHTML += `<option value="${c}">${c} - ${CURRENCY_NAMES[c]}</option>`; });
-      initSupabase();
-      fetchRates();
-      setInterval(fetchRates,30000);
-    };
-  </script>
+    <!-- Orders card -->
+    <div class="card" style="grid-column:1 / -1">
+      <div class="card-title">📋 我的订单</div>
+      <div id="order_list" class="order-list"></div>
+    </div>
+
+    <!-- Admin card (only visible to admin) -->
+    <div id="adminCard" class="card hidden" style="grid-column:1 / -1">
+      <div class="card-title">🛡️ 管理后台</div>
+      <div class="nav-row">
+        <button class="nav-btn" onclick="adminTab('topupCheck')">充值待审</button>
+        <button class="nav-btn" onclick="adminTab('u2l')">U兑币待审</button>
+        <button class="nav-btn" onclick="adminTab('l2u')">币兑U待审</button>
+        <button class="nav-btn" onclick="adminTab('withdraw')">提现待审</button>
+        <button class="nav-btn" onclick="adminTab('ref')">推广统计</button>
+      </div>
+      <div id="admin_content" class="order-list"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = window.ENV?.SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = window.ENV?.SUPABASE_ANON_KEY || '';
+const CURRENCIES = ['IRR','SAR','AED','KWD','QAR','EGP','IQD','JOD','OMR'];
+const CNAMES = {IRR:'伊朗里亚尔',SAR:'沙特里亚尔',AED:'阿联酋迪拉姆',KWD:'科威特第纳尔',QAR:'卡塔尔里亚尔',EGP:'埃及镑',IQD:'伊拉克第纳尔',JOD:'约旦第纳尔',OMR:'阿曼里亚尔'};
+const TRC20 = '0x2395d729411aF3a4D8f9FBe5ad76B8A052aeD2A8';
+const MIN = 100; const FEERATE = { '24h': .03, '72h': .01 };
+let sb = null, user = null, rates = {}, lock = false;
+
+function t(cn,en){ return cn; }
+function toast(msg){ alert(msg); }
+function switchTab(t){
+  document.getElementById('loginPanel').classList.toggle('hidden', t!=='login');
+  document.getElementById('regPanel').classList.toggle('hidden', t!=='reg');
+  document.getElementById('loginTab').classList.toggle('active', t==='login');
+  document.getElementById('regTab').classList.toggle('active', t==='reg');
+}
+function validateLogin(){ btn_login.disabled=!(login_user.value.trim() && login_pwd.value.trim().length>=6); }
+function validateReg(){ btn_reg.disabled=!(reg_user.value.trim() && reg_pwd.value.trim().length>=6); }
+
+async function init(){
+  if(!SUPABASE_URL || !SUPABASE_ANON_KEY){ alert('缺少Supabase配置'); return; }
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const { error } = await sb.from('users').select('id').limit(1);
+  if(error){ alert('Supabase连接失败: '+error.message); return; }
+  const { data:{session} } = await sb.auth.getSession();
+  if(session) onLogin(session.user);
+}
+
+const safeLogin = (async()=>{
+  const u=login_user.value.trim(), p=login_pwd.value.trim();
+  if(!u || !p){ toast('请输入账号密码'); return; }
+  btn_login.innerText='登录中...'; btn_login.disabled=true;
+  try{
+    const { error } = await sb.auth.signInWithPassword({email:`${u}@mid-east-exchange.com`,password:p});
+    if(error) throw error;
+    const { data } = await sb.auth.getUser();
+    onLogin(data.user);
+  }catch(e){ toast(e.message||'登录失败'); }
+  finally{ btn_login.innerText='登录'; btn_login.disabled=false; }
+});
+
+const safeRegister = (async()=>{
+  const u=reg_user.value.trim(), p=reg_pwd.value.trim(), phone=reg_phone.value.trim(), ref=reg_ref.value.trim();
+  if(!u || !p){ toast('请填写完整'); return; }
+  btn_reg.innerText='注册中...'; btn_reg.disabled=true;
+  try{
+    const { data:exist } = await sb.from('users').select('username').eq('username',u).single();
+    if(exist) throw new Error('账号已存在');
+    const { data:auth, error } = await sb.auth.signUp({email:`${u}@mid-east-exchange.com`,password:p,options:{data:{username:u,phone,ref}}});
+    if(error) throw error;
+    await sb.from('users').insert({id:auth.user.id,username:u,phone,ref,usdt:0,irr:0,sar:0,aed:0,kwd:0,qar:0,egp:0,iqd:0,jod:0,omr:0,total_reward:0});
+    toast('注册成功，请登录'); switchTab('login');
+  }catch(e){ toast(e.message||'注册失败'); }
+  finally{ btn_reg.innerText='注册'; btn_reg.disabled=false; }
+});
+
+async function onLogin(authUser){
+  const { data } = await sb.from('users').select('*').eq('id',authUser.id).single();
+  user = data;
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('main-screen').style.display='flex';
+  if(authUser.app_metadata?.role==='admin') document.getElementById('adminCard').classList.remove('hidden');
+  document.getElementById('userNameDisplay').innerText = user.username;
+  topAddrDisplay.innerText = TRC20;
+  loadWallet(); fetchRates();
+  // populate selects
+  CURRENCIES.forEach(c=>{ u2l_cur.innerHTML+=`<option value="${c}">${c} ${CNAMES[c]}</option>`; l2u_cur.innerHTML+=`<option value="${c}">${c} ${CNAMES[c]}</option>`; });
+}
+
+async function logout(){ await sb.auth.signOut(); user=null; document.getElementById('main-screen').style.display='none'; document.getElementById('login-screen').style.display='flex'; }
+
+async function loadWallet(){
+  const { data } = await sb.from('users').select('*').eq('id',user.id).single();
+  if(data) user=data;
+  bal_usdt.innerText = Number(user.usdt||0).toFixed(2);
+  let h=''; CURRENCIES.forEach(c=>h+=`<div class="currency-item"><span>${c}</span><b>${Number(user[c.toLowerCase()]||0).toFixed(2)}</b></div>`);
+  currencyBalances.innerHTML=h;
+}
+
+async function fetchRates(){
+  try{
+    const r=await fetch('https://open.er-api.com/v6/latest/USD'), d=await r.json();
+    CURRENCIES.forEach(c=>{ rates[c]=d.rates[c]||1; });
+    let h=''; CURRENCIES.forEach(c=>h+=`${c} ${CNAMES[c]}: ${Number(rates[c]).toFixed(4)}<br>`);
+    rate_body.innerHTML=h||'加载失败';
+  }catch(e){ rate_body.innerHTML='汇率加载失败'; }
+}
+
+function calcU2L(){ const amt=+u2l_amt.value||0, cur=u2l_cur.value, fee=FEERATE[u2l_speed.value]||0, r=rates[cur]||1; u2l_result.value=(amt*r*(1-fee)).toFixed(2); }
+function calcL2U(){ const amt=+l2u_amt.value||0, cur=l2u_cur.value, fee=FEERATE[l2u_speed.value]||0, r=rates[cur]||1; l2u_result.value=(amt/r*(1-fee)).toFixed(2); }
+
+async function safeSubmitTopup(){
+  const amt=+top_amt.value; if(amt<10){ toast('最低10U'); return; }
+  await sb.from('topups').insert({user_id:user.id,amount:amt,status:'待审核',created_at:new Date().toISOString()});
+  toast('已提交');
+  showOrders();
+}
+
+async function safeSubmitU2L(){
+  const amt=+u2l_amt.value, cur=u2l_cur.value, speed=u2l_speed.value, fee=FEERATE[speed]||0;
+  if(amt<MIN){ toast('最低'+MIN+'U'); return; }
+  if(amt>user.usdt){ toast('余额不足'); return; }
+  await sb.from('users').update({usdt:user.usdt-amt}).eq('id',user.id);
+  await sb.from('u2l_orders').insert({user_id:user.id,amount:amt,currency:cur,speed,fee,submit_rate:rates[cur]||1,status:'待审核',created_at:new Date().toISOString()});
+  const { data } = await sb.from('users').select('*').eq('id',user.id).single(); user=data;
+  toast('已提交'); loadWallet(); showOrders();
+}
+
+async function safeSubmitL2U(){
+  const cur=l2u_cur.value, amt=+l2u_amt.value, speed=l2u_speed.value, fee=FEERATE[speed]||0, r=rates[cur]||1;
+  const usdt=amt/r; if(usdt<MIN){ toast('最低等值'+MIN+'U'); return; }
+  const f=cur.toLowerCase(); if(amt>(user[f]||0)){ toast('余额不足'); return; }
+  await sb.from('users').update({[f]:user[f]-amt}).eq('id',user.id);
+  await sb.from('l2u_orders').insert({user_id:user.id,amount:amt,currency:cur,speed,fee,submit_rate:r,status:'待审核',created_at:new Date().toISOString()});
+  const { data } = await sb.from('users').select('*').eq('id',user.id).single(); user=data;
+  toast('已提交'); loadWallet(); showOrders();
+}
+
+function checkAddr(){ btn_wd.disabled=!/^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(wd_addr.value.trim()); }
+
+async function safeSubmitWD(){
+  const amt=+wd_amt.value, addr=wd_addr.value.trim();
+  if(!amt||amt>user.usdt){ toast('余额不足'); return; }
+  await sb.from('users').update({usdt:user.usdt-amt}).eq('id',user.id);
+  await sb.from('withdraws').insert({user_id:user.id,amount:amt,address:addr,status:'待处理',created_at:new Date().toISOString()});
+  const { data } = await sb.from('users').select('*').eq('id',user.id).single(); user=data;
+  toast('提现已提交'); loadWallet(); showOrders();
+}
+
+async function showOrders(){
+  const [t,u2,l2,wd,rew]=await Promise.all([
+    sb.from('topups').select('*').eq('user_id',user.id).order('created_at',{ascending:false}),
+    sb.from('u2l_orders').select('*').eq('user_id',user.id).order('created_at',{ascending:false}),
+    sb.from('l2u_orders').select('*').eq('user_id',user.id).order('created_at',{ascending:false}),
+    sb.from('withdraws').select('*').eq('user_id',user.id).order('created_at',{ascending:false}),
+    sb.from('reward_logs').select('*').eq('to_user_id',user.id).order('created_at',{ascending:false}).limit(20)
+  ]);
+  let h='';
+  t.data?.forEach(o=>h+=orderLine('充值',o.amount+'U',o.status,o.created_at));
+  u2.data?.forEach(o=>h+=orderLine('U→'+o.currency,o.amount+'U',o.status,o.created_at));
+  l2.data?.forEach(o=>h+=orderLine(o.currency+'→U',o.amount,o.status,o.created_at));
+  wd.data?.forEach(o=>h+=orderLine('提现',o.amount+'U',o.status,o.created_at));
+  rew.data?.forEach(r=>h+=orderLine('返佣','+'+Number(r.amount_usdt||0).toFixed(2)+'U','已通过',r.created_at));
+  order_list.innerHTML=h||'暂无记录';
+}
+
+function orderLine(type,amount,status,time){
+  const done=status==='已通过';
+  return `<div class="order-item">${new Date(time).toLocaleString()} <b>${type}</b> ${amount} <span class="order-status ${done?'done':'pending'}">${status}</span></div>`;
+}
+
+async function adminTab(t){
+  let h='', wheres='';
+  if(t==='topupCheck') wheres="status=eq.待审核";
+  if(t==='u2l') wheres="status=eq.待审核";
+  if(t==='l2u') wheres="status=eq.待审核";
+  if(t==='withdraw') wheres="status=eq.待处理";
+  if(!wheres){ admin_content.innerHTML='无数据'; return; }
+  let table=t; if(t==='topupCheck') table='topups';
+  if(t==='u2l') table='u2l_orders'; if(t==='l2u') table='l2u_orders'; if(t==='withdraw') table='withdraws';
+  const { data } = await sb.from(table).select('*, users(username)').eq('status','待审核').order('created_at',{ascending:false});
+  data?.forEach(o=>{
+    const label=table==='topups'?`充值${o.amount}U`:table==='u2l_orders'?`U→${o.currency}${o.amount}U`:table==='l2u_orders'?`${o.currency}→U ${o.amount}`:`提现${o.amount}U`;
+    h+=`<div class="order-item">${o.users?.username||'--'} ${label} <button class="approve-btn ok" onclick="approveFn('${table}',${o.id})">通过</button> <button class="approve-btn no" onclick="rejectFn('${table}',${o.id})">驳回</button></div>`;
+  });
+  admin_content.innerHTML=h||'无待审';
+}
+
+async function approveFn(table,id){
+  let fn='approve_topup'; if(table==='u2l_orders') fn='approve_u2l'; if(table==='l2u_orders') fn='approve_l2u'; if(table==='withdraws') fn='approve_withdraw';
+  const { error } = await sb.rpc(fn, { order_id: id });
+  if(error) alert('操作失败: '+error.message); else { toast('已通过'); adminTab(table==='topups'?'topupCheck':table); loadWallet(); showOrders(); }
+}
+async function rejectFn(table,id){
+  const col=table==='topups'?'topups':table==='u2l_orders'?'u2l_orders':table==='l2u_orders'?'l2u_orders':'withdraws';
+  await sb.from(table).update({status:'已驳回'}).eq('id',id);
+  toast('已驳回'); adminTab(table==='topups'?'topupCheck':table);
+}
+
+window.onload=()=>{ init(); fetchRates(); setInterval(fetchRates,30000); };
+</script>
 </body>
 </html>
