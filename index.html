@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+ <title>中东货币兑换 | 云端版</title>
+ <style>
+ *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto}
+ body{
+ background:linear-gradient(160deg, #0c2336, #102b42, #163652);
+ min-height:100vh;padding:16px;
+ display:flex;flex-direction:column;align-items:center;color:#eaf5ff;
+ position:relative;
+ }
+ body::before{
+ content:'';position:fixed;inset:0;
+ background:url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%239C92AC" fill-opacity="0.04"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm-1-30v8h2V4h2V2h-6v2h2zM2 34v-2h8v2H2zm28 24v-2h-4v2h-2v2h8v-2h-2zM2 2h2v2H2v2H0V2h2zm0 28v-2H0v-2H2v2h2zm28 4v-2h-2v2h-2v2h2v-2h2zm-28 8H0v-2h2v2h2v2H2v-2zm4-8h2v2H6v-2H4v-2h2v2zm26-16h-2v-2h2v2h-2zm-4-2h2v2h-2v-2zm2-4h2v2h-2v-2z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');
+ z-index:-1;opacity:0.3;
+ }
+ .container{width:100%;max-width:820px;position:relative;z-index:1;}
+ .card{
+ background:rgba(255,255,255,0.045);
+ backdrop-filter:blur(16px);
+ border:1px solid rgba(255,255,255,0.09);
+ border-radius:24px;
+ padding:22px 24px;
+ margin-bottom:18px;
+ box-shadow:0 8px 30px rgba(0,0,0,0.2);
+ }
+ .notice-bar{
+ background:rgba(255,193,7,0.12);
+ border-left:4px solid #ffc107;
+ padding:12px 16px;border-radius:14px;
+ margin-bottom:16px;font-size:14px;
+ }
+ .main-title{
+ text-align:center;font-size:30px;
+ background:linear-gradient(90deg,#60a9ff,#b3d8ff);
+ -webkit-background-clip:text;background-clip:text;color:transparent;
+ margin:6px 0 10px;font-weight:700;
+ }
+ .sub-title{
+ text-align:center;font-size:15px;color:#c0d8ff;margin-bottom:20px;opacity:0.9;
+ }
+ .status-bar{
+ background:rgba(0,0,0,0.35);border-radius:16px;
+ padding:12px 18px;margin-bottom:20px;
+ text-align:center;font-size:14px;
+ }
+ .status-bar.success{background:rgba(46, 204, 113, 0.12);border-left:4px solid #2ecc71;}
+ .status-bar.error{background:rgba(231, 76, 60, 0.15);border-left:4px solid #e74c3c;}
+ .status-bar.warning{background:rgba(241, 196, 15, 0.15);border-left:4px solid #f1c40f;}
+ .tab-header{display:flex;gap:10px;margin-bottom:22px;}
+ .tab-btn{flex:1;background:rgba(255,255,255,0.06);border:none;padding:12px;border-radius:16px;color:#d4e4ff;font-weight:600;cursor:pointer;transition:all 0.2s;}
+ .tab-btn.active{background:#3498db;color:white;}
+ .form-group{margin-bottom:18px;}
+ label{display:block;margin-bottom:7px;font-size:14px;color:#c8e0ff;}
+ input,select,button{
+ width:100%;padding:14px 16px;
+ border-radius:16px;border:1px solid rgba(255,255,255,0.12);
+ background:rgba(0,0,0,0.3);color:white;font-size:15px;
+ transition:all 0.2s;
+ }
+ input:focus,select:focus{outline:none;border-color:#3498db;background:rgba(0,0,0,0.4);}
+ button{
+ background:linear-gradient(90deg,#3498db,#2980b9);
+ border:none;font-weight:bold;cursor:pointer;
+ }
+ button:disabled{
+ opacity:0.5 !important;
+ cursor:not-allowed !important;
+ transform:none !important;
+ }
+ button:active{transform:scale(0.97);}
+ .nav-bar{
+ display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
+ margin-bottom:20px;
+ }
+ .nav-btn{
+ background:rgba(255,255,255,0.07);
+ border:1px solid rgba(255,255,255,0.1);
+ padding:10px 12px;border-radius:14px;
+ font-size:13px;text-align:center;cursor:pointer;
+ }
+ .balance-grid{
+ display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+ gap:10px;margin:16px 0;
+ }
+ .balance-item{
+ background:rgba(0,0,0,0.25);border-radius:14px;
+ padding:12px;text-align:center;font-size:14px;
+ }
+ .order-list{max-height:420px;overflow-y:auto;line-height:1.7;font-size:14px;}
+ .admin-buttons{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;}
+ .admin-buttons button{background:#2c3e50;width:auto;padding:8px 14px;font-size:13px;}
+ .hidden{display:none !important;}
+ .toast{
+ position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+ min-width:240px;background:#1e2b3d;
+ padding:12px 20px;border-radius:40px;
+ text-align:center;z-index:9999;display:none;
+ box-shadow:0 6px 20px rgba(0,0,0,0.3);
+ }
+ .footer{text-align:center;margin-top:16px;font-size:12px;color:#a0b8e0;}
+ .notice{
+ background:rgba(52, 152, 219, 0.09);
+ border-left:4px solid #3498db;
+ padding:11px 14px;border-radius:12px;
+ margin-bottom:16px;font-size:13px;
+ }
+ .reward-tip{
+ background:rgba(241, 196, 15, 0.09);
+ border-left:4px solid #f1c40f;
+ padding:11px 14px;border-radius:12px;
+ margin-bottom:16px;font-size:13px;
+ }
+ .lang-bar{
+ display:flex;gap:10px;justify-content:center;
+ margin-bottom:16px;flex-wrap:wrap;
+ }
+ .lang-btn{
+ width:auto;padding:8px 14px;background:#1e2b3d;
+ border:none;border-radius:30px;
+ }
+ .retry-btn{
+ background:#2c3e50;color:#fff;border:none;
+ padding:8px 14px;border-radius:30px;
+ cursor:pointer;font-size:13px;
+ }
+ table{width:100%;border-collapse:collapse;margin-top:10px;}
+ th,td{padding:10px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.08);}
+ th{color:#c0d8ff;font-size:14px;}
+ .modal{
+ position:fixed;inset:0;background:rgba(0,0,0,0.6);
+ display:flex;align-items:center;justify-content:center;
+ z-index:9998;padding:20px;
+ }
+ .modal-box{
+ background:#152a42;border-radius:20px;
+ max-width:380px;width:100%;padding:24px;
+ text-align:center;
+ }
+ .modal-box h3{margin-bottom:16px;color:#ffc107;}
+ .modal-box p{margin-bottom:12px;line-height:1.6;}
+ .modal-box .copy-btn{margin-top:10px;background:#27ae60;}
+ .close-modal{background:#7f8c8d;margin-top:10px;}
+ .maintain-modal{background:rgba(0,0,0,0.85);color:white;}
+ </style>
+ <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+ <script>
+ const SUPABASE_URL = 'https://mezvbnvfthnvzgpwjejq.supabase.co';
+ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1lenZibnZmdGhudnpncHdqZWpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MTAxMzcsImV4cCI6MjA5MDA4NjEzN30.-qXBO0ANxxNds6vhBWLDSH3F6fWFRSvkR15zPQIJkOo';
+ let supabase = null;
+ let currUser = null;
+ let lang = 'cn';
+ let rateCache = {};
+ let adminSubscription = null;
+
+ const MAINTAIN_MODE = false;
+ const MAINTAIN_MSG = "系统维护中，预计1小时内恢复";
+
+ const CURRENCIES = ["IRR","SAR","AED","KWD","QAR","EGP","IQD","JOD","OMR"];
+ const CURRENCY_NAMES = {
+ IRR:"伊朗里亚尔",SAR:"沙特里亚尔",AED:"阿联酋迪拉姆",KWD:"科威特第纳尔",
+ QAR:"卡塔尔里亚尔",EGP:"埃及镑",IQD:"伊拉克第纳尔",JOD:"约旦第纳尔",OMR:"阿曼里亚尔"
+ };
+ const TRC20_ADDR = "0x2395d729411aF3a4D8f9FBe5ad76B8A052aeD2A8";
+ const MIN_EXCHANGE = 100;
+ const FEE_RATE = { "24h":0.03, "72h":0.01 };
+
+ let submitLock = false;
+
+ function tMsg(cn, en, ar) {
+ if(lang==='en')return en;
+ if(lang==='ar')return ar;
+ return cn;
+ }
+
+ function showToast(msg) {
+ let t = document.getElementById('toastMsg');
+ if(t){ t.innerText = msg; t.style.display = 'block'; setTimeout(()=>t.style.display='none',2200); }
+ }
+
+ function copyText(text) {
+ navigator.clipboard.writeText(text).then(()=>showToast(tMsg("已复制","Copied","تم النسخ")));
+ }
+
+ function withLock(fn) {
+ return async (...args) => {
+ if(submitLock){
+ showToast(tMsg("操作处理中，请稍候","Processing...","جاري المعالجة"));
+ return;
+ }
+ submitLock = true;
+ try {
+ return await fn(...args);
+ } finally {
+ submitLock = false;
+ }
+ };
+ }
+
+ function setBtnLoading(btn, text, loading){
+ if(!btn) return;
+ btn.disabled = loading;
+ btn.innerText = loading ? text : btn.dataset.originalText;
+ btn.style.opacity = loading ? 0.6 : 1;
+ }
+
+ function openService(){
+ let m = document.createElement('div');
+ m.className='modal';
+ m.innerHTML=`<div class="modal-box"><h3>联系客服</h3><p>Telegram: @ZDHBDHKF</p><button class="copy-btn" onclick="copyText('@ZDHBDHKF')">复制</button><button class="close-modal" onclick="this.closest('.modal').remove()">关闭</button></div>`;
+ document.body.appendChild(m);
+ }
+
+ function openNotice(){
+ let m = document.createElement('div');
+ m.className='modal';
+ m.innerHTML=`<div class="modal-box"><h3>📢 公告</h3><p>• 最低兑换 100 USDT</p><p>• 24h手续费3%，72h仅1%</p><p>• 推广返佣50%手续费</p><button class="close-modal" onclick="this.closest('.modal').remove()">关闭</button></div>`;
+ document.body.appendChild(m);
+ }
+
+ function checkMaintain(){
+ if(MAINTAIN_MODE){
+ let m=document.createElement('div');
+ m.className='modal maintain-modal';
+ m.innerHTML=`<div style="padding:40px;text-align:center"><h2>维护中</h2><p>${MAINTAIN_MSG}</p></div>`;
+ document.body.appendChild(m);
+ throw 'maintain';
+ }
+ }
+
+ async function initSupabase() {
+ checkMaintain();
+ const s=document.getElementById('statusMsg');
+ s.className='status-bar warning';
+ s.innerHTML='🔌 连接中...';
+ try{
+ if(!window.supabase)throw new Error("SDK加载失败");
+ supabase=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+ await supabase.from('users').select('id').limit(1);
+ s.className='status-bar success';
+ s.innerHTML='✅ 连接成功';
+ autoLogin();
+ }catch(e){
+ s.className='status-bar error';
+ s.innerHTML=`❌ 失败：${e.message}`;
+ }
+ }
+
+ function retryInit(){
+ document.getElementById('statusMsg').innerHTML='🔄 重试中...';
+ initSupabase();
+ }
+
+ function validateLogin(){
+ let u=document.getElementById('login_user').value.trim();
+ let p=document.getElementById('login_pwd').value.trim();
+ let b=document.getElementById('btn_login');
+ b.disabled = !(u && p.length>=6);
+ }
+
+ const safeLogin = withLock(async ()=>{
+ checkMaintain();
+ let btn=document.getElementById('btn_login');
+ setBtnLoading(btn,tMsg("登录中...","Logging...","جاري تسجيل الدخول"),true);
+ try{
+ let u=document.getElementById('login_user').value.trim();
+ let p=document.getElementById('login_pwd').value.trim();
+ if(!u||!p)return showToast(tMsg("请输入账号密码","Enter info","أدخل البيانات"));
+ let email=`${u}@mid-east-exchange.com`;
+ let {error}=await supabase.auth.signInWithPassword({email,password:p});
+ if(error)return showToast(tMsg("账号或密码错误","Error","خطأ"));
+ let {data:user}=await supabase.from('users').select('*').eq('username',u).single();
+ currUser=user;
+ sessionStorage.setItem('currUserId',currUser.id);
+ document.getElementById('loginBox').classList.add('hidden');
+ document.getElementById('mainContent').classList.remove('hidden');
+ document.getElementById('nav-bar').classList.remove('hidden');
+ let {data:{user:suser}}=await supabase.auth.getUser();
+ let isAdmin=suser?.app_metadata?.role==='admin';
+ document.getElementById('adminBtn').style.display=isAdmin?'inline-block':'none';
+ if(isAdmin)startAdminRealtime();
+ show('wallet');
+ showToast(tMsg("登录成功","Success","تم تسجيل الدخول"));
+ }finally{
+ setBtnLoading(btn,"登录",false);
+ }
+ });
+
+ function validateReg(){
+ let u=document.getElementById('reg_user').value.trim();
+ let p=document.getElementById('reg_pwd').value.trim();
+ let b=document.getElementById('btn_reg');
+ b.disabled = !(u && p.length>=6);
+ }
+
+ const safeRegister = withLock(async ()=>{
+ checkMaintain();
+ let btn=document.getElementById('btn_reg');
+ setBtnLoading(btn,tMsg("注册中...","Registering...","جاري التسجيل"),true);
+ try{
+ let u=document.getElementById('reg_user').value.trim();
+ let p=document.getElementById('reg_pwd').value.trim();
+ let phone=document.getElementById('reg_phone').value.trim();
+ let ref=document.getElementById('reg_ref').value.trim();
+ if(!u||!p)return showToast(tMsg("请填写完整","Fill all","املأ الحقول"));
+ if(p.length<6)return showToast(tMsg("密码至少6位","Min 6 chars","6 أحرف على الأقل"));
+ let {data:exist}=await supabase.from('users').select('username').eq('username',u).single();
+ if(exist)return showToast(tMsg("账号已存在","Exists","موجود"));
+ if(ref){
+ let {data:ru}=await supabase.from('users').select('username').eq('username',ref).single();
+ if(!ru)return showToast(tMsg("推荐人不存在","Not found","غير موجود"));
+ }
+ let email=`${u}@mid-east-exchange.com`;
+ let {data:auth,error:err}=await supabase.auth.signUp({email,password:p,options:{data:{username:u,phone,ref}}});
+ if(err)return showToast(err.message);
+ await supabase.from('users').insert({
+ id:auth.user.id,username:u,phone,ref,
+ usdt:0,irr:0,sar:0,aed:0,kwd:0,qar:0,egp:0,iqd:0,jod:0,omr:0,total_reward:0
+ });
+ showToast(tMsg("注册成功，请登录","Success","تم التسجيل"));
+ switchTab('login');
+ }finally{
+ setBtnLoading(btn,"注册",false);
+ }
+ });
+
+ async function logout(){
+ await supabase.auth.signOut();
+ if(adminSubscription)adminSubscription.unsubscribe();
+ currUser=null;
+ sessionStorage.removeItem('currUserId');
+ document.getElementById('mainContent').classList.add('hidden');
+ document.getElementById('nav-bar').classList.add('hidden');
+ document.getElementById('loginBox').classList.remove('hidden');
+ }
+
+ async function autoLogin(){
+ try{
+ let {data:{session}}=await supabase.auth.getSession();
+ if(session){
+ let {data:user}=await supabase.from('users').select('*').eq('id',session.user.id).single();
+ if(user){
+ currUser=user;
+ document.getElementById('loginBox').classList.add('hidden');
+ document.getElementById('mainContent').classList.remove('hidden');
+ document.getElementById('nav-bar').classList.remove('hidden');
+ let isAdmin=session.user.app_metadata?.role==='admin';
+ document.getElementById('adminBtn').style.display=isAdmin?'inline-block':'none';
+ if(isAdmin)startAdminRealtime();
+ show('wallet');
+ }
+ }
+ }catch(e){}
+ }
+
+ function startAdminRealtime(){
+ if(adminSubscription)adminSubscription.unsubscribe();
+ adminSubscription=supabase.channel('top')
+ .on('postgres_changes',{event:'INSERT',schema:'public',table:'topups'},p=>{
+ if(p.new.status==='待审核')showToast(`新充值：${p.new.amount} USDT`);
+ }).subscribe();
+ }
+
+ function show(id){
+ checkMaintain();
+ document.querySelectorAll('.section').forEach(i=>i.classList.add('hidden'));
+ document.getElementById(id).classList.remove('hidden');
+ if(id==='wallet')loadWallet();
+ if(id==='topup')loadTopup();
+ if(id==='order')loadOrder();
+ if(id==='ref')loadRef();
+ if(id==='admin')adminTab('topupCheck');
+ }
+
+ async function loadWallet(){
+ if(!currUser)return;
+ let {data:u}=await supabase.from('users').select('*').eq('id',currUser.id).single();
+ if(u)currUser=u;
+ document.getElementById('bal_usdt').innerText=currUser.usdt.toFixed(2);
+ CURRENCIES.forEach(c=>document.getElementById(`bal_${c}`).innerText=(currUser[c.toLowerCase()]||0).toFixed(2));
+ }
+
+ function loadTopup(){
+ document.getElementById('tip_mark').innerText=currUser.username;
+ document.getElementById('topAddr').innerText=TRC20_ADDR;
+ document.getElementById('topQrImg').src=`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${TRC20_ADDR}`;
+ }
+
+ const safeSubmitTopup = withLock(async ()=>{
+ checkMaintain();
+ let btn=document.querySelector('#topup button');
+ setBtnLoading(btn,tMsg("提交中...","Submitting...","جاري الإرسال"),true);
+ try{
+ let amt=+document.getElementById('top_amt').value;
+ if(amt<10)return showToast(tMsg("最低10U","Min 10","الحد الأدنى 10"));
+ await supabase.from('topups').insert({user_id:currUser.id,amount:amt,status:'待审核',created_at:new Date().toISOString()});
+ showToast(tMsg("已提交，待审核","Submitted","تم الإرسال"));
+ show('order');
+ }finally{
+ setBtnLoading(btn,"提交充值申请",false);
+ }
+ });
+
+ async function loadOrder(){
+ let [top,u2l,l2u,wd,reward]=await Promise.all([
+ supabase.from('topups').select('*').eq('user_id',currUser.id).order('created_at',{ascending:false}),
+ supabase.from('u2l_orders').select('*').eq('user_id',currUser.id).order('created_at',{ascending:false}),
+ supabase.from('l2u_orders').select('*').eq('user_id',currUser.id).order('created_at',{ascending:false}),
+ supabase.from('withdraws').select('*').eq('user_id',currUser.id).order('created_at',{ascending:false}),
+ supabase.from('reward_logs').select('*').eq('to_user_id',currUser.id).order('created_at',{ascending:false}).limit(10)
+ ]);
+ let h='';
+ top.data?.forEach(o=>h+=`${new Date(o.created_at).toLocaleString()} 充值 ${o.amount}U ${o.status}<br>`);
+ u2l.data?.forEach(o=>h+=`${new Date(o.created_at).toLocaleString()} U→${o.currency} ${o.amount}U ${o.status}<br>`);
+ l2u.data?.forEach(o=>h+=`${new Date(o.created_at).toLocaleString()} ${o.currency}→U ${o.amount} ${o.currency} ${o.status}<br>`);
+ wd.data?.forEach(o=>h+=`${new Date(o.created_at).toLocaleString()} 提现 ${o.amount}U ${o.status}<br>`);
+ reward.data?.forEach(r=>h+=`🎁 返佣 +${r.amount_usdt.toFixed(2)}U<br>`);
+ document.getElementById('order_list').innerHTML=h||tMsg("暂无记录","No records","لا توجد سجلات");
+ }
+
+ async function loadRef(){
+ document.getElementById('ref_code').innerText=currUser.username;
+ let {count}=await supabase.from('users').select('*',{count:'exact',head:true}).eq('ref',currUser.username);
+ document.getElementById('ref_count').innerText=count||0;
+ let {data:list}=await supabase.from('users').select('username').eq('ref',currUser.username);
+ document.getElementById('ref_list').innerHTML=list?.map(i=>i.username).join('<br>')||tMsg("暂无下级","No referrals","لا يوجد");
+ }
+
+ async function fetchRates(){
+ try{
+ let r=await fetch("https://open.er-api.com/v6/latest/USD");
+ let d=await r.json();
+ CURRENCIES.forEach(c=>rateCache[c]=d.rates[c]||1);
+ let h='';
+ CURRENCIES.forEach(c=>h+=`<tr><td>${c}</td><td>${CURRENCY_NAMES[c]}</td><td>${(rateCache[c]||1).toFixed(4)}</td></tr>`);
+ document.getElementById('rate_body').innerHTML=h;
+ calcUsdToLocal();calcLocalToUsd();
+ }catch(e){}
+ }
+
+ function calcUsdToLocal(){
+ let amt=+document.getElementById('u2l_amt').value||0;
+ let cur=document.getElementById('u2l_cur').value;
+ let fee=FEE_RATE[document.getElementById('u2l_speed').value];
+ let r=rateCache[cur]||1;
+ document.getElementById('u2l_result').value=(amt*r*(1-fee)).toFixed(2);
+ }
+
+ function calcLocalToUsd(){
+ let amt=+document.getElementById('l2u_amt').value||0;
+ let cur=document.getElementById('l2u_cur').value;
+ let fee=FEE_RATE[document.getElementById('l2u_speed').value];
+ let r=rateCache[cur]||1;
+ document.getElementById('l2u_result').value=(amt/r*(1-fee)).toFixed(2);
+ }
+
+ const safeSubmitU2L = withLock(async ()=>{
+ checkMaintain();
+ let btn=document.querySelector('#usd2local button');
+ setBtnLoading(btn,tMsg("提交中...","Submitting...","جاري الإرسال"),true);
+ try{
+ let amt=+document.getElementById('u2l_amt').value;
+ let cur=document.getElementById('u2l_cur').value;
+ let speed=document.getElementById('u2l_speed').value;
+ let fee=FEE_RATE[speed];
+ if(amt<MIN_EXCHANGE)return showToast(tMsg(`最低${MIN_EXCHANGE}U`,`Min 100`,`الحد الأدنى 100`));
+ if(amt>currUser.usdt)return showToast(tMsg("余额不足","Insufficient","رصيد غير كاف"));
+ await supabase.from('users').update({usdt:currUser.usdt-amt}).eq('id',currUser.id);
+ await supabase.from('u2l_orders').insert({
+ user_id:currUser.id,amount:amt,currency:cur,speed:speed,fee:fee,
+ submit_rate:rateCache[cur]||1,status:'待审核',created_at:new Date().toISOString()
+ });
+ let {data:u}=await supabase.from('users').select('*').eq('id',currUser.id).single();
+ currUser=u;
+ showToast(tMsg("已提交，待审核","Submitted","تم الإرسال"));
+ show('order');
+ }finally{
+ setBtnLoading(btn,"提交兑换",false);
+ }
+ });
+
+ const safeSubmitL2U = withLock(async ()=>{
+ checkMaintain();
+ let btn=document.querySelector('#local2usd button');
+ setBtnLoading(btn,tMsg("提交中...","Submitting...","جاري الإرسال"),true);
+ try{
+ let cur=document.getElementById('l2u_cur').value;
+ let amt=+document.getElementById('l2u_amt').value;
+ let speed=document.getElementById('l2u_speed').value;
+ let fee=FEE_RATE[speed];
+ let r=rateCache[cur]||1;
+ let usdt=amt/r;
+ if(usdt<MIN_EXCHANGE)return showToast(tMsg(`最低等值${MIN_EXCHANGE}U`,`Min 100`,`الحد الأدنى`));
+ let f=cur.toLowerCase();
+ if(amt>(currUser[f]||0))return showToast(tMsg("余额不足","Insufficient","رصيد غير كاف"));
+ await supabase.from('users').update({[f]:currUser[f]-amt}).eq('id',currUser.id);
+ await supabase.from('l2u_orders').insert({
+ user_id:currUser.id,amount:amt,currency:cur,speed:speed,fee:fee,
+ submit_rate:r,status:'待审核',created_at:new Date().toISOString()
+ });
+ let {data:u}=await supabase.from('users').select('*').eq('id',currUser.id).single();
+ currUser=u;
+ showToast(tMsg("已提交，待审核","Submitted","تم الإرسال"));
+ show('order');
+ }finally{
+ setBtnLoading(btn,"提交兑换",false);
+ }
+ });
+
+ function checkAddr(){
+ let a=document.getElementById('wd_addr').value.trim();
+ let btn=document.getElementById('btn_wd');
+ let ok=/^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(a);
+ btn.disabled=!ok;
+ }
+
+ const safeSubmitWD = withLock(async ()=>{
+ checkMaintain();
+ let btn=document.getElementById('btn_wd');
+ setBtnLoading(btn,tMsg("提交中...","Submitting...","جاري الإرسال"),true);
+ try{
+ let amt=+document.getElementById('wd_amt').value;
+ let addr=document.getElementById('wd_addr').value.trim();
+ if(amt<=0||amt>currUser.usdt)return showToast(tMsg("余额不足","Insufficient","رصيد غير كاف"));
+ await supabase.from('users').update({usdt:currUser.usdt-amt}).eq('id',currUser.id);
+ await supabase.from('withdraws').insert({
+ user_id:currUser.id,amount:amt,address:addr,status:'待处理',created_at:new Date().toISOString()
+ });
+ let {data:u}=await supabase.from('users').select('*').eq('id',currUser.id).single();
+ currUser=u;
+ showToast(tMsg("提现已提交","Withdraw submitted","تم تقديم السحب"));
+ show('order');
+ }finally{
+ setBtnLoading(btn,"提交提现",false);
+ }
+ });
+
+ async function adminTab(t){
+ let h='';
+ if(t==='topupCheck'){
+ let {data}=await supabase.from('topups').select('*, users(username)').eq('status','待审核');
+ data?.forEach(o=>{h+=`${o.users.username} 充值${o.amount}U <button onclick="approveTopup('${o.id}')">✅通过</button> <button onclick="rejectTopup('${o.id}')">❌驳回</button><br>`;});
+ }else if(t==='topup'){
+ let {data}=await supabase.from('topups').select('*, users(username)').order('created_at',{ascending:false});
+ data?.forEach(o=>h+=`${o.users.username} 充值${o.amount}U ${o.status}<br>`);
+ }else if(t==='u2l'){
+ let {data}=await supabase.from('u2l_orders').select('*, users(username)').eq('status','待审核');
+ data?.forEach(o=>{h+=`${o.users.username} U→${o.currency}${o.amount}U <button onclick="approveU2L('${o.id}')">✅通过</button> <button onclick="rejectU2L('${o.id}')">❌驳回</button><br>`;});
+ }else if(t==='l2u'){
+ let {data}=await supabase.from('l2u_orders').select('*, users(username)').eq('status','待审核');
+ data?.forEach(o=>{h+=`${o.users.username} ${o.currency}→U <button onclick="approveL2U('${o.id}')">✅通过</button> <button onclick="rejectL2U('${o.id}')">❌驳回</button><br>`;});
+ }else if(t==='withdraw'){
+ let {data}=await supabase.from('withdraws').select('*, users(username)').eq('status','待处理');
+ data?.forEach(o=>{h+=`${o.users.username} 提现${o.amount}U <button onclick="approveWD('${o.id}')">✅已转</button> <button onclick="rejectWD('${o.id}')">❌驳回</button><br>`;});
+ }else if(t==='ref'){
+ let {data:us}=await supabase.from('users').select('username');
+ for(let u of us||[]){
+ let {count}=await supabase.from('users').select('*',{count:'exact',head:true}).eq('ref',u.username);
+ h+=`${u.username} | 下级：${count||0}<br>`;
+ }
+ }
+ document.getElementById('admin_content').innerHTML=h||'无数据';
+ }
+
+ async function approveTopup(id){let e=await supabase.rpc('approve_topup',{order_id:id});if(e.error)showToast(e.error.message);adminTab('topupCheck');}
+ async function rejectTopup(id){let e=await supabase.rpc('reject_topup',{order_id:id});adminTab('topupCheck');}
+ async function approveU2L(id){let e=await supabase.rpc('approve_u2l',{order_id:id});adminTab('u2l');}
+ async function rejectU2L(id){let e=await supabase.rpc('reject_u2l',{order_id:id});adminTab('u2l');}
+ async function approveL2U(id){let e=await supabase.rpc('approve_l2u',{order_id:id});adminTab('l2u');}
+ async function rejectL2U(id){let e=await supabase.rpc('reject_l2u',{order_id:id});adminTab('l2u');}
+ async function approveWD(id){let e=await supabase.rpc('approve_withdraw',{order_id:id});adminTab('withdraw');}
+ async function rejectWD(id){let e=await supabase.rpc('reject_withdraw',{order_id:id});adminTab('withdraw');}
+
+ function switchTab(t){
+ document.getElementById('loginPanel').style.display=t==='login'?'block':'none';
+ document.getElementById('regPanel').style.display=t==='reg'?'block':'none';
+ }
+
+ function setLang(l){lang=l;location.reload();}
+
+ window.onload=()=>{
+ initSupabase();
+ fetchRates();
+ setInterval(fetchRates,30000);
+ };
+ </script>
+</head>
+<body>
+
+<div class="container">
+ <h1 class="main-title">中东货币兑换</h1>
+ <h2 class="sub-title">USDT ↔ 当地货币 双向实时兑换</h2>
+
+ <div class="lang-bar">
+ <button class="lang-btn" onclick="setLang('cn')">中文</button>
+ <button class="lang-btn" onclick="setLang('en')">English</button>
+ <button class="lang-btn" onclick="setLang('ar')">العربية</button>
+ <button class="retry-btn" onclick="retryInit()">🔁 重试</button>
+ <button class="retry-btn" onclick="openNotice()">📢 公告</button>
+ <button class="retry-btn" onclick="openService()">💬 客服</button>
+ </div>
+
+ <div id="statusMsg" class="status-bar">正在初始化...</div>
+
+ <div id="loginBox" class="card">
+ <div class="tab-header">
+ <button class="tab-btn active" onclick="switchTab('login')">登录</button>
+ <button class="tab-btn" onclick="switchTab('reg')">注册</button>
+ </div>
+ <div id="loginPanel">
+ <div class="form-group"><label>账号</label><input id="login_user" oninput="validateLogin()"></div>
+ <div class="form-group"><label>密码</label><input type="password" id="login_pwd" oninput="validateLogin()"></div>
+ <button id="btn_login" data-original-text="登录" onclick="safeLogin()" disabled>登录</button>
+ </div>
+ <div id="regPanel" style="display:none">
+ <div class="reward-tip">🎁 推荐人获得下级每笔手续费50%返佣</div>
+ <div class="form-group"><label>账号</label><input id="reg_user" oninput="validateReg()"></div>
+ <div class="form-group"><label>密码</label><input type="password" id="reg_pwd" oninput="validateReg()"></div>
+ <div class="form-group"><label>Telegram / WhatsApp</label><input id="reg_phone"></div>
+ <div class="form-group"><label>推荐人（选填）</label><input id="reg_ref"></div>
+ <button id="btn_reg" data-original-text="注册" onclick="safeRegister()" disabled>注册</button>
+ </div>
+ </div>
+
+ <div id="mainContent" class="hidden">
+ <div id="nav-bar" class="nav-bar hidden">
+ <button class="nav-btn" onclick="show('wallet')">钱包</button>
+ <button class="nav-btn" onclick="show('rate')">汇率</button>
+ <button class="nav-btn" onclick="show('topup')">充值</button>
+ <button class="nav-btn" onclick="show('usd2local')">U→当地币</button>
+ <button class="nav-btn" onclick="show('local2usd')">当地币→U</button>
+ <button class="nav-btn" onclick="show('withdraw')">提现</button>
+ <button class="nav-btn" onclick="show('order')">订单</button>
+ <button class="nav-btn" onclick="show('ref')">推广</button>
+ <button id="adminBtn" class="nav-btn" onclick="show('admin')" style="display:none;">管理</button>
+ <button class="nav-btn" onclick="logout()">退出</button>
+ </div>
+
+ <div id="wallet" class="section card">
+ <h3 style="margin-bottom:14px;">我的钱包</h3>
+ <div class="balance-item">USDT: <span id="bal_usdt">0.00</span></div>
+ <div class="balance-grid" id="currencyBalances"></div>
+ </div>
+
+ <div id="rate" class="section card hidden">
+ <h3>实时汇率 (1 USDT = ?)</h3>
+ <table><thead><tr><th>货币</th><th>名称</th><th>汇率</th></tr></thead><tbody id="rate_body"></tbody></table>
+ </div>
+
+ <div id="topup" class="section card hidden">
+ <h3>USDT 充值 (TRC20)</h3>
+ <div class="notice">⚠️ 转账备注：<b id="tip_mark">USER</b></div>
+ <div style="text-align:center;margin:12px 0;"><img id="topQrImg" style="width:160px;border-radius:16px;"></div>
+ <div style="word-break:break-all;text-align:center;margin:10px 0;">地址：<span id="topAddr"></span></div>
+ <div class="form-group"><input type="number" id="top_amt" placeholder="充值金额" min="10"></div>
+ <button data-original-text="提交充值申请" onclick="safeSubmitTopup()">提交充值申请</button>
+ </div>
+
+ <div id="usd2local" class="section card hidden">
+ <h3>USDT → 当地货币</h3>
+ <div class="notice">⚠️ 最低 100 USDT</div>
+ <div class="form-group"><input type="number" id="u2l_amt" placeholder="USDT数量" min="100" oninput="calcUsdToLocal()"></div>
+ <div class="form-group"><select id="u2l_cur" onchange="calcUsdToLocal()"></select></div>
+ <div class="form-group"><select id="u2l_speed" onchange="calcUsdToLocal()">
+ <option value="24h">24小时到账 3%</option>
+ <option value="72h">72小时到账 1%</option>
+ </select></div>
+ <div class="form-group"><label>预计到账</label><input id="u2l_result" readonly></div>
+ <button data-original-text="提交兑换" onclick="safeSubmitU2L()">提交兑换</button>
+ </div>
+
+ <div id="local2usd" class="section card hidden">
+ <h3>当地货币 → USDT</h3>
+ <div class="notice">⚠️ 最低等值 100 USDT</div>
+ <div class="form-group"><select id="l2u_cur" onchange="calcLocalToUsd()"></select></div>
+ <div class="form-group"><input type="number" id="l2u_amt" placeholder="当地货币数量" oninput="calcLocalToUsd()"></div>
+ <div class="form-group"><select id="l2u_speed" onchange="calcLocalToUsd()">
+ <option value="24h">24小时到账 3%</option>
+ <option value="72h">72小时到账 1%</option>
+ </select></div>
+ <div class="form-group"><label>预计获得 USDT</label><input id="l2u_result" readonly></div>
+ <button data-original-text="提交兑换" onclick="safeSubmitL2U()">提交兑换</button>
+ </div>
+
+ <div id="withdraw" class="section card hidden">
+ <h3>提现 USDT (TRC20)</h3>
+ <div class="form-group"><input type="number" id="wd_amt" placeholder="提现金额" min="10"></div>
+ <div class="form-group"><input id="wd_addr" placeholder="TRC20地址" oninput="checkAddr()"></div>
+ <button id="btn_wd" data-original-text="提交提现" onclick="safeSubmitWD()" disabled>提交提现</button>
+ </div>
+
+ <div id="order" class="section card hidden">
+ <h3>我的订单</h3>
+ <div id="order_list" class="order-list"></div>
+ </div>
+
+ <div id="ref" class="section card hidden">
+ <h3>推广返佣</h3>
+ <div class="balance-item">推荐码：<b id="ref_code" style="color:#ffc107"></b></div>
+ <div class="balance-item">下级人数：<b id="ref_count">0</b></div>
+ <h4 style="margin:16px 0 10px;">下级列表</h4>
+ <div id="ref_list"></div>
+ </div>
+
+ <div id="admin" class="section card hidden">
+ <h3>管理后台</h3>
+ <div class="admin-buttons">
+ <button onclick="adminTab('topupCheck')">充值待审</button>
+ <button onclick="adminTab('topup')">充值记录</button>
+ <button onclick="adminTab('u2l')">U兑币待审</button>
+ <button onclick="adminTab('l2u')">币兑U待审</button>
+ <button onclick="adminTab('withdraw')">提现待审</button>
+ <button onclick="adminTab('ref')">推广统计</button>
+ </div>
+ <div id="admin_content"></div>
+ </div>
+ </div>
+
+ <div class="footer">© 中东货币兑换 | 安全 · 快捷 · 稳定</div>
+</div>
+
+<div id="toastMsg" class="toast"></div>
+
+<script>
+ let balHtml='';
+ CURRENCIES.forEach(c=>{
+ balHtml+=`<div class="balance-item">${c}<br><span id="bal_${c}">0</span></div>`;
+ });
+ document.getElementById('currencyBalances').innerHTML=balHtml;
+
+ let u2l=document.getElementById('u2l_cur');
+ let l2u=document.getElementById('l2u_cur');
+ CURRENCIES.forEach(c=>{
+ u2l.innerHTML+=`<option value="${c}">${c} - ${CURRENCY_NAMES[c]}</option>`;
+ l2u.innerHTML+=`<option value="${c}">${c} - ${CURRENCY_NAMES[c]}</option>`;
+ });
+</script>
+</body>
+</html>
