@@ -82,8 +82,13 @@ input:focus,select:focus{outline:none;border-color:var(--blue)}
 
 <!-- LOGIN SCREEN (full page, no sidebar) -->
 <div id="login-screen" style="display:flex">
-  <div class="login-box">
-    <div class="login-title">中东货币兑换</div>
+  <div class="login-box" style="position:relative">
+    <select id="langSel" onchange="setLang(this.value)" style="position:absolute;top:12px;right:12px;width:130px;padding:10px 14px;font-size:14px;background:linear-gradient(135deg,#1a3a6e,#0f2557);border:2px solid #4d9fff;color:#fff;border-radius:14px;cursor:pointer;font-weight:700;z-index:10">
+      <option value="zh">🇨🇳 中文</option>
+      <option value="en">🇬🇧 English</option>
+      <option value="ar">🇸🇦 العربية</option>
+    </select>
+    <div class="login-title" id="siteTitle">中东货币兑换</div>
     <div class="login-sub">USDT ↔ 中东本地货币 · 双向实时兑换</div>
     <div class="tab-row">
       <div class="tab active" id="loginTab" onclick="switchTab('login')">登录</div>
@@ -439,6 +444,18 @@ function showPage(p){
   if(btn) btn.classList.add('active');
 }
 
+const LANG={
+  zh:{t:'中东货币兑换',tabL:'登录',tabR:'注册'},
+  en:{t:'Mid-East Exchange',tabL:'Login',tabR:'Register'},
+  ar:{t:'صرف العملات',tabL:'تسجيل الدخول',tabR:'التسجيل'}
+};
+let curL='zh';
+function setLang(v){
+  curL=v; const t=LANG[v];
+  if(document.getElementById('siteTitle')) document.getElementById('siteTitle').innerText=t.t;
+  document.documentElement.dir=v==='ar'?'rtl':'ltr';
+  document.documentElement.lang=v;
+}
 window.onload=()=>{ init(); fetchRates(); setInterval(fetchRates,30000); };
 </script>
 </body>
