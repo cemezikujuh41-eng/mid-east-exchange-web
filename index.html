@@ -378,6 +378,80 @@ async function adminTab(t){
   if(t==='u2l') wheres="status=eq.待审核";
   if(t==='l2u') wheres="status=eq.待审核";
   if(t==='withdraw') wheres="status=eq.待处理";
+  if(t==='ref') {
+    // 推广统计
+    try {
+      const { data: users } = await sb.from('users').select('id, username, ref, total_reward, created_at').order('created_at', {ascending: false});
+      const { data: refStats } = await sb.from('reward_logs').select('from_user_id, to_user_id, amount_usdt').order('created_at', {ascending: false});
+      
+      h += `<div style="margin-bottom: 20px; font-size: 14px; color: var(--muted)">用户推广统计（按注册时间排序）</div>`;
+      
+      if (users && users.length) {
+        // 按推荐人分组
+        const refMap = {};
+        users.forEach(u => {
+          if (u.ref) {
+            if (!refMap[u.ref]) refMap[u.ref] = [];
+            refMap[u.ref].push(u);
+          }
+        });
+        
+        // 计算返佣总额
+        const rewardMap = {};
+        if (refStats) {
+          refStats.forEach(r => {
+            if (!rewardMap[r.from_user_id]) rewardMap[r.from_user_id] = 0;
+            rewardMap[r.from_user_id] += Number(r.amount_usdt || 0);
+          });
+        }
+        
+        h += `<table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+          <tr style="background: rgba(255,255,255,0.05);">
+            <th style="padding: 10px; text-align: left; border-bottom: 1px solid var(--border);">用户</th>
+            <th style="padding: 10px; text-align: left; border-bottom: 1px solid var(--border);">推荐人</th>
+            <th style="padding: 10px; text-align: left; border-bottom: 1px solid var(--border);">返佣总额</th>
+            <th style="padding: 10px; text-align: left; border-bottom: 1px solid var(--border);">注册时间</th>
+            <th style="padding: 10px; text-align: left; border-bottom: 1px solid var(--border);">推荐人数</th>
+          </tr>`;
+        
+        users.forEach(u => {
+          const regTime = new Date(u.created_at).toLocaleString('zh-CN', {year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'});
+          const refCount = refMap[u.username] ? refMap[u.username].length : 0;
+          const rewardTotal = rewardMap[u.id] ? rewardMap[u.id].toFixed(2) : '0.00';
+          
+          h += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <td style="padding: 10px;">${u.username}</td>
+            <td style="padding: 10px;">${u.ref || '无'}</td>
+            <td style="padding: 10px; color: var(--green);">${rewardTotal} USDT</td>
+            <td style="padding: 10px; color: var(--muted);">${regTime}</td>
+            <td style="padding: 10px;">${refCount} 人</td>
+          </tr>`;
+        });
+        
+        h += `</table>`;
+        
+        // 统计汇总
+        const totalUsers = users.length;
+        const totalWithRef = users.filter(u => u.ref).length;
+        const totalReward = Object.values(rewardMap).reduce((sum, val) => sum + val, 0);
+        
+        h += `<div style="margin-top: 20px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 12px; font-size: 13px;">
+          <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div><strong>总用户数:</strong> ${totalUsers}</div>
+            <div><strong>有推荐人:</strong> ${totalWithRef}</div>
+            <div><strong>总返佣额:</strong> <span style="color: var(--green);">${totalReward.toFixed(2)} USDT</span></div>
+          </div>
+        </div>`;
+      } else {
+        h = '暂无用户数据';
+      }
+    } catch (e) {
+      h = `查询失败: ${e.message}`;
+    }
+    admin_content.innerHTML = h;
+    return;
+  }
+  
   if(!wheres){ admin_content.innerHTML='无数据'; return; }
   let table=t; if(t==='topupCheck') table='topups';
   if(t==='u2l') table='u2l_orders'; if(t==='l2u') table='l2u_orders'; if(t==='withdraw') table='withdraws';
@@ -396,42 +470,132 @@ async function adminTab(t){
 }
 
 async function approveFn(table,id){
-  const { data:order } = await sb.from(table).select('*').eq('id',id).single();
-  const { error } = await sb.from(table).update({status:'已通过'}).eq('id',id);
-  if(error){ alert('操作失败: '+error.message); return; }
-  if(order){
-    const uid = order.user_id;
-    if(table==='topups'){
-      const { data:u } = await sb.from('users').select('usdt').eq('id',uid).single();
-      if(u) await sb.from('users').update({usdt:(u.usdt||0)+Number(order.amount)}).eq('id',uid);
-    } else if(table==='u2l_orders'){
-      const fld = (order.currency||'IRR').toLowerCase();
-      const { data:u } = await sb.from('users').select(fld).eq('id',uid).single();
-      if(u) await sb.from('users').update({[fld]:(u[fld]||0)+Number(order.amount)}).eq('id',uid);
-    } else if(table==='l2u_orders'){
-      const fld = (order.currency||'IRR').toLowerCase();
-      const { data:u } = await sb.from('users').select('usdt,'+fld).eq('id',uid).single();
-      const usdtAmt = Number(order.amount) / Number(order.submit_rate||1) * (1 - Number(order.fee||0));
-      const newUsdt = (u.usdt||0) + usdtAmt;
-      const newFld = (u[fld]||0) - Number(order.amount);
-      await sb.from('users').update({usdt:newUsdt,[fld]:newFld}).eq('id',uid);
+  // 找到被点击的按钮，禁用并显示加载状态
+  const buttons = document.querySelectorAll(`button[onclick="approveFn('${table}',${id})"]`);
+  const button = buttons[0];
+  const originalText = button?.innerText || '通过';
+  if (button) {
+    button.disabled = true;
+    button.innerText = '处理中...';
+    button.style.opacity = '0.7';
+  }
+  
+  try {
+    const { data:order } = await sb.from(table).select('*').eq('id',id).single();
+    const { error } = await sb.from(table).update({status:'已通过'}).eq('id',id);
+    if(error){ 
+      toast('❌ 操作失败: '+error.message); 
+      return; 
+    }
+    
+    if(order){
+      const uid = order.user_id;
+      if(table==='topups'){
+        const { data:u } = await sb.from('users').select('usdt').eq('id',uid).single();
+        if(u) await sb.from('users').update({usdt:(u.usdt||0)+Number(order.amount)}).eq('id',uid);
+      } else if(table==='u2l_orders'){
+        const fld = (order.currency||'IRR').toLowerCase();
+        const { data:u } = await sb.from('users').select(fld).eq('id',uid).single();
+        if(u) await sb.from('users').update({[fld]:(u[fld]||0)+Number(order.amount)}).eq('id',uid);
+      } else if(table==='l2u_orders'){
+        const fld = (order.currency||'IRR').toLowerCase();
+        const { data:u } = await sb.from('users').select('usdt,'+fld).eq('id',uid).single();
+        const usdtAmt = Number(order.amount) / Number(order.submit_rate||1) * (1 - Number(order.fee||0));
+        const newUsdt = (u.usdt||0) + usdtAmt;
+        const newFld = (u[fld]||0) - Number(order.amount);
+        await sb.from('users').update({usdt:newUsdt,[fld]:newFld}).eq('id',uid);
+      }
+    }
+    
+    toast('✅ 已通过');
+    // 等待500ms后刷新数据
+    setTimeout(() => {
+      const t2 = table==='topups'?'topupCheck':table;
+      adminTab(t2); 
+      loadWallet(); 
+      showOrders();
+    }, 500);
+    
+  } catch (e) {
+    toast('❌ 操作异常: ' + e.message);
+    console.error('审批异常:', e);
+  } finally {
+    // 恢复按钮状态
+    if (button) {
+      setTimeout(() => {
+        button.disabled = false;
+        button.innerText = originalText;
+        button.style.opacity = '1';
+      }, 1000);
     }
   }
-  toast('已通过');
-  const t2 = table==='topups'?'topupCheck':table;
-  adminTab(t2); loadWallet(); showOrders();
 }
 
 async function rebuildBalances(){
   if(!confirm('确认重建所有用户余额？将根据已通过的充值记录重新计算。')) return;
-  const { error } = await sb.rpc('rebuild_balances');
-  if(error){ toast('失败: '+error.message); }
-  else { toast('余额重建完成'); loadWallet(); adminTab('topupCheck'); }
+  
+  // 显示加载状态
+  const originalText = document.querySelector('#tab_admin')?.innerText || '余额重建';
+  const adminTabBtn = document.querySelector('#tab_admin');
+  if (adminTabBtn) adminTabBtn.innerHTML = '🔄 重建中...';
+  
+  try {
+    const { error } = await sb.rpc('rebuild_balances');
+    if(error){ 
+      toast('失败: ' + error.message); 
+      console.error('余额重建错误:', error);
+    }
+    else { 
+      toast('✅ 余额重建完成'); 
+      // 刷新钱包和订单显示
+      setTimeout(() => {
+        loadWallet(); 
+        adminTab('topupCheck');
+      }, 500);
+    }
+  } catch (e) {
+    toast('❌ 重建过程出错: ' + e.message);
+    console.error('余额重建异常:', e);
+  } finally {
+    // 恢复按钮文本
+    if (adminTabBtn) adminTabBtn.innerHTML = originalText;
+  }
 }
 
 async function rejectFn(table,id){
-  await sb.from(table).update({status:'已驳回'}).eq('id',id);
-  toast('已驳回'); const t2 = table==='topups'?'topupCheck':table; adminTab(t2);
+  // 找到被点击的按钮，禁用并显示加载状态
+  const buttons = document.querySelectorAll(`button[onclick="rejectFn('${table}',${id})"]`);
+  const button = buttons[0];
+  const originalText = button?.innerText || '驳回';
+  if (button) {
+    button.disabled = true;
+    button.innerText = '处理中...';
+    button.style.opacity = '0.7';
+  }
+  
+  try {
+    await sb.from(table).update({status:'已驳回'}).eq('id',id);
+    toast('✅ 已驳回');
+    
+    // 等待500ms后刷新数据
+    setTimeout(() => {
+      const t2 = table==='topups'?'topupCheck':table;
+      adminTab(t2);
+    }, 500);
+    
+  } catch (e) {
+    toast('❌ 操作失败: ' + e.message);
+    console.error('驳回异常:', e);
+  } finally {
+    // 恢复按钮状态
+    if (button) {
+      setTimeout(() => {
+        button.disabled = false;
+        button.innerText = originalText;
+        button.style.opacity = '1';
+      }, 1000);
+    }
+  }
 }
 
 function showPage(p){
