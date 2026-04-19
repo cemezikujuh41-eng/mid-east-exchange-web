@@ -747,13 +747,14 @@ const safeRegister = (async()=>{
     const { data:auth, error } = await sb.auth.signUp({email:`${u}@mid-east-exchange.com`,password:p,options:{data:{username:u}}});
     if(error) throw error;
     // auth.signUp 会触发数据库自动创建用户记录，然后用 REST API PATCH 更新 ref, question, answer 字段
-    await new Promise(r => setTimeout(r, 500)); // 等待 trigger 执行
-    const patchRes = await fetch(`${REST_URL}/users?id=eq.${auth.user.id}`, {
+    await new Promise(r => setTimeout(r, 800)); // 等待 trigger 执行
+    // 用 username 查询，不用 id（id 可能取不到）
+    const patchRes = await fetch(`${REST_URL}/users?username=eq.${u}`, {
       method:'PATCH',
-      headers:{'Content-Type':'application/json','apikey':SERVICE_KEY,'Authorization':`Bearer ${SERVICE_KEY}`},
+      headers:{'Content-Type':'application/json','apikey':SERVICE_KEY,'Authorization':`Bearer ${SERVICE_KEY}`,'Prefer':'return=minimal'},
       body: JSON.stringify({ref:ref||null, question, answer})
     });
-    if(!patchRes.ok){ const errTxt = await patchRes.text(); console.error('ref update failed:',errTxt); }
+    if(!patchRes.ok){ const errTxt = await patchRes.text(); console.error('ref update failed:',errTxt, patchRes.status); }
     toast('注册成功，请登录'); switchTab('login');
   }catch(e){ toast(e.message||'注册失败'); }
   finally{ btn_reg.innerText='注册'; btn_reg.disabled=false; }
