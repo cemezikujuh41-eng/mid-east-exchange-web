@@ -748,20 +748,14 @@ const safeRegister = (async()=>{
     if(error) throw error;
     // auth.signUp 会触发数据库自动创建用户记录，然后用 REST API PATCH 更新 ref, question, answer 字段
     await new Promise(r => setTimeout(r, 800)); // 等待 trigger 执行
-    // Supabase v2: sb.auth.signUp() 返回 { data: { user, session }, error }
-    const newUserId = auth?.data?.user?.id;
-    console.log('safeRegister: userId=', newUserId, 'username=', u);
-    if(newUserId){
-      const patchRes = await fetch(`${REST_URL}/users?id=eq.${newUserId}`, {
-        method:'PATCH',
-        headers:{'Content-Type':'application/json','apikey':SERVICE_KEY,'Authorization':`Bearer ${SERVICE_KEY}`,'Prefer':'return=minimal'},
-        body: JSON.stringify({ref:ref||null, question, answer})
-      });
-      if(!patchRes.ok){ const errTxt = await patchRes.text(); console.error('ref update failed:',errTxt, patchRes.status); }
-      else { console.log('ref update ok'); }
-    } else {
-      console.error('safeRegister: auth.user.id is null, cannot update ref');
-    }
+    // 用 username 查询更新（auth.user.id 在某些情况下是 null，但 username 已由 trigger 设置）
+    const patchRes = await fetch(`${REST_URL}/users?username=eq.${encodeURIComponent(u)}`, {
+      method:'PATCH',
+      headers:{'Content-Type':'application/json','apikey':SERVICE_KEY,'Authorization':`Bearer ${SERVICE_KEY}`,'Prefer':'return=minimal'},
+      body: JSON.stringify({ref:ref||null, question, answer})
+    });
+    if(!patchRes.ok){ const errTxt = await patchRes.text(); console.error('ref update failed:',errTxt, patchRes.status); }
+    else { console.log('ref update ok for', u); }
     toast('注册成功，请登录'); switchTab('login');
   }catch(e){ toast(e.message||'注册失败'); }
   finally{ btn_reg.innerText='注册'; btn_reg.disabled=false; }
