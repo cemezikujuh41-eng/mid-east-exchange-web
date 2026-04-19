@@ -746,9 +746,9 @@ const safeRegister = (async()=>{
     if(exist) throw new Error('账号已存在');
     const { data:auth, error } = await sb.auth.signUp({email:`${u}@mid-east-exchange.com`,password:p,options:{data:{username:u}}});
     if(error) throw error;
-    await new Promise(r => setTimeout(r, 1000));
-    await sb.from('users').update({ref:ref||null}).eq('username',u);
-  }catch(e){ toast(e.message||'注册失败'); }
+    await new Promise(r => setTimeout(r, 800));
+    const sbAdmin = window.supabase.createClient(SUPABASE_URL, SERVICE_KEY);
+    await sbAdmin.from('users').update({ref:ref||null}).eq('username',u);
   finally{ btn_reg.innerText='注册'; btn_reg.disabled=false; }
 });
 
