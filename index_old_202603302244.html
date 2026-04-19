@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>中东货币兑换</title>
+<script src="./env.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#030818;--bg2:#0a1628;--accent:#1a3a8f;--card:rgba(255,255,255,.07);--border:rgba(255,255,255,.12);--txt:#dce9ff;--muted:#8aaad4;--blue:#4d9fff;--blue2:#6fb3ff;--gold:#f5c842;--green:#4ade80;--red:#f87171;--radius:20px}
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+body{min-height:100vh;color:var(--txt);background:radial-gradient(ellipse at 20% 0%,#1a3a8f 0%,#0a1628 40%,#030818 100%);background-attachment:fixed;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+
+/* Full-screen login panel */
+#login-screen{flex-direction:column;width:100%;max-width:440px}
+.login-box{width:100%;background:var(--card);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:var(--radius);padding:40px 32px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.login-title{font-size:28px;font-weight:800;text-align:center;background:linear-gradient(90deg,#4d9fff,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:6px}
+.login-sub{text-align:center;color:var(--muted);font-size:14px;margin-bottom:30px}
+.field{margin-bottom:16px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:7px}
+input,select{width:100%;padding:14px 16px;border-radius:14px;border:1px solid var(--border);background:rgba(0,0,0,.4);color:#fff;font-size:15px;transition:border .2s}
+input:focus,select:focus{outline:none;border-color:var(--blue)}
+.btn{width:100%;padding:14px;border-radius:14px;border:none;background:linear-gradient(90deg,var(--blue),#3b7dd8);color:#fff;font-size:16px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.btn:hover{opacity:.88}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.hint{font-size:12px;color:var(--muted);text-align:center;margin-top:14px}
+.tab-row{display:flex;gap:10px;margin-bottom:24px}
+.tab{flex:1;padding:11px;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--txt);cursor:pointer;text-align:center}
+.tab.active{background:linear-gradient(90deg,var(--blue),#3b7dd8);border-color:transparent}
+
+/* Main dashboard - hidden until login */
+#main-screen{display:none;flex-direction:column;width:100%;max-width:1200px}
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;background:var(--card);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px}
+.top-title{font-size:22px;font-weight:800;background:linear-gradient(90deg,var(--blue),#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#4ade80;display:inline-block;margin-right:6px}
+.status-text{font-size:13px;color:var(--muted)}
+.main-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:900px){.main-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.main-grid{grid-template-columns:1fr}}
+.card{background:var(--card);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:var(--radius);padding:22px}
+.card-title{font-size:14px;color:var(--muted);margin-bottom:16px;font-weight:600}
+.balance-big{font-size:36px;font-weight:800;color:#fff;margin-bottom:4px}
+.balance-label{font-size:12px;color:var(--muted)}
+.currency-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.currency-item{background:rgba(0,0,0,.25);border-radius:12px;padding:12px;text-align:center}
+.currency-item span{display:block;font-size:12px;color:var(--muted)}
+.currency-item b{font-size:18px;color:#fff;margin-top:4px;display:block}
+
+/* Nav tabs inside main */
+.nav-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.nav-btn{padding:10px 16px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--txt);cursor:pointer;font-size:13px}
+.nav-btn:hover{background:rgba(77,159,255,.15)}
+.nav-btn.active{background:linear-gradient(90deg,var(--blue),#3b7dd8);border-color:transparent}
+
+/* Forms inside cards */
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+.form-group input,.form-group select{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:rgba(0,0,0,.4);color:#fff;font-size:14px}
+.form-group input:focus,.form-group select:focus{outline:none;border-color:var(--blue)}
+.btn-sm{width:auto;padding:10px 20px;border-radius:12px;border:none;background:linear-gradient(90deg,var(--blue),#3b7dd8);color:#fff;font-size:14px;font-weight:600;cursor:pointer}
+.btn-sm:disabled{opacity:.4;cursor:not-allowed}
+.notice-box{padding:12px 14px;border-radius:12px;background:rgba(255,204,100,.08);border:1px solid rgba(255,204,100,.2);color:#ffe1a0;font-size:13px;margin-bottom:14px}
+
+/* Admin approve buttons */
+.approve-btn{padding:8px 16px;border-radius:10px;border:none;cursor:pointer;font-size:13px;margin-right:6px}
+.approve-btn.ok{background:linear-gradient(90deg,var(--green),#22c55e);color:#fff}
+.approve-btn.no{background:linear-gradient(90deg,var(--red),#ef4444);color:#fff}
+
+/* Order list */
+.order-list{max-height:400px;overflow:auto;font-size:13px;line-height:1.8;color:#c8ddf5}
+.order-item{padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.order-status{font-size:11px;padding:3px 8px;border-radius:8px;margin-left:6px}
+.order-status.done{background:rgba(74,222,128,.15);color:#4ade80}
+.order-status.pending{background:rgba(255,204,100,.15);color:#f5c842}
+
+/* Hidden utility */
+.hidden{display:none!important}
+.logout-btn{background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--muted);padding:8px 16px;border-radius:12px;cursor:pointer;font-size:13px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN (full page, no sidebar) -->
+<div id="login-screen" style="display:flex">
+  <div class="login-box" style="position:relative">
+    <select id="langSel" onchange="setLang(this.value)" style="position:absolute;top:12px;right:12px;width:130px;padding:10px 14px;font-size:14px;background:linear-gradient(135deg,#1a3a6e,#0f2557);border:2px solid #4d9fff;color:#fff;border-radius:14px;cursor:pointer;font-weight:700;z-index:10">
+      <option value="zh">🇨🇳 中文</option>
+      <option value="en">🇬🇧 English</option>
+      <option value="ar">🇸🇦 العربية</option>
+    </select>
+    <div class="login-title" id="siteTitle">中东货币兑换</div>
+    <div class="login-sub">USDT ↔ 中东本地货币 · 双向实时兑换</div>
+    <div class="tab-row">
+      <div class="tab active" id="loginTab" onclick="switchTab('login')">登录</div>
+      <div class="tab" id="regTab" onclick="switchTab('reg')">注册</div>
+    </div>
+    <div id="loginPanel">
+      <div class="field"><label>账号</label><input id="login_user" oninput="validateLogin()" placeholder="纯字母数字，不要带@"></div>
+      <div class="field"><label>密码</label><input type="password" id="login_pwd" oninput="validateLogin()" placeholder="至少6位"></div>
+      <button id="btn_login" class="btn" data-orig="登录" onclick="safeLogin()" disabled>登录</button>
+    </div>
+    <div id="regPanel" class="hidden">
+      <div class="notice-box">推荐人可获得下级手续费50%返佣</div>
+      <div class="field"><label>账号</label><input id="reg_user" oninput="validateReg()" placeholder="输入用户名（不用写邮箱）"></div>
+      <div class="field"><label>密码</label><input type="password" id="reg_pwd" oninput="validateReg()" placeholder="至少6位"></div>
+      <div class="field"><label>Telegram / WhatsApp</label><input id="reg_phone" placeholder="选填"></div>
+      <div class="field"><label>推荐人</label><input id="reg_ref" placeholder="选填"></div>
+      <button id="btn_reg" class="btn" data-orig="注册" onclick="safeRegister()" disabled>注册</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN DASHBOARD (full page after login) -->
+<div id="main-screen">
+  <div class="top-bar">
+    <div class="top-title">中东货币兑换</div>
+    <div>
+      <span class="status-dot"></span><span class="status-text">已连接</span>
+      <span id="userNameDisplay" style="margin-left:16px;color:var(--muted);font-size:13px"></span>
+      <button class="logout-btn" onclick="logout()">退出</button>
+    </div>
+  </div>
+
+  <div class="nav-row" id="mainNav">
+    <button class="nav-btn active" onclick="showPage('wallet')" id="tab_wallet">💰 钱包</button>
+    <button class="nav-btn" onclick="showPage('topup')" id="tab_topup">💵 充值</button>
+    <button class="nav-btn" onclick="showPage('u2l')" id="tab_u2l">💱 购汇</button>
+    <button class="nav-btn" onclick="showPage('l2u')" id="tab_l2u">💰 售汇</button>
+    <button class="nav-btn" onclick="showPage('wd')" id="tab_wd">🏧 提现</button>
+    <button class="nav-btn" onclick="showPage('orders')" id="tab_orders">📋 订单</button>
+  </div>
+
+  <div class="main-grid">
+    <!-- Wallet card -->
+    <div class="card" id="page_wallet" style="grid-column:1">
+      <div class="card-title">💰 我的钱包</div>
+      <div class="balance-big" id="bal_usdt">0.00</div>
+      <div class="balance-label">USDT</div>
+      <div class="currency-grid" id="currencyBalances"></div>
+    </div>
+
+    <!-- Rate card -->
+    <div class="card" id="page_rates">
+      <div class="card-title">📊 实时汇率 (1 USDT)</div>
+      <div id="rate_body" style="font-size:13px;line-height:1.8"></div>
+    </div>
+
+    <!-- Topup card -->
+    <div class="card" id="page_topup" style="display:none">
+      <div class="card-title">💵 充值 USDT</div>
+      <div class="notice-box">地址：<b id="topAddrDisplay"></b></div>
+      <div style="text-align:center;margin:10px 0"><img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=0x2395d729411aF3a4D8f9FBe5ad76B8A052aeD2A8" style="border-radius:12px;border:2px solid var(--border)" alt="QR Code"></div>
+      <div class="form-group"><input type="number" id="top_amt" placeholder="充值金额(≥10)" min="10"></div>
+      <button class="btn-sm" onclick="safeSubmitTopup()">提交充值申请</button>
+    </div>
+
+    <!-- USD to Local card -->
+    <div class="card" id="page_u2l" style="display:none">
+      <div class="card-title">💱 购汇（USDT → 当地币）</div>
+      <div class="notice-box">最低100 USDT</div>
+      <div class="form-group"><input type="number" id="u2l_amt" placeholder="USDT数量" oninput="calcU2L()"></div>
+      <div class="form-group"><select id="u2l_cur" onchange="calcU2L()"></select></div>
+      <div class="form-group"><select id="u2l_speed" onchange="calcU2L()"><option value="24h">24h到账3%</option><option value="72h">72h到账1%</option></select></div>
+      <div class="form-group"><label>预计到账</label><input id="u2l_result" readonly></div>
+      <button class="btn-sm" onclick="safeSubmitU2L()">提交兑换</button>
+    </div>
+
+    <!-- Local to USD card -->
+    <div class="card" id="page_l2u" style="display:none">
+      <div class="card-title">💰 售汇（当地币 → USDT）</div>
+      <div class="notice-box">最低等值100 USDT</div>
+      <div class="form-group"><select id="l2u_cur" onchange="calcL2U()"></select></div>
+      <div class="form-group"><input type="number" id="l2u_amt" placeholder="当地货币数量" oninput="calcL2U()"></div>
+      <div class="form-group"><select id="l2u_speed" onchange="calcL2U()"><option value="24h">24h到账3%</option><option value="72h">72h到账1%</option></select></div>
+      <div class="form-group"><label>预计获得USDT</label><input id="l2u_result" readonly></div>
+      <button class="btn-sm" onclick="safeSubmitL2U()">提交兑换</button>
+    </div>
+
+    <!-- Withdraw card -->
+    <div class="card" id="page_wd" style="display:none">
+      <div class="card-title">🏧 提现 USDT</div>
+      <div class="form-group"><input type="number" id="wd_amt" placeholder="提现金额"></div>
+      <div class="form-group"><input id="wd_addr" placeholder="TRC20地址(以T开头)" oninput="checkAddr()"></div>
+      <button id="btn_wd" class="btn-sm" onclick="safeSubmitWD()" disabled>提交提现</button>
+    </div>
+
+    <!-- Orders card -->
+    <div class="card" id="page_orders" style="display:none;grid-column:1 / -1">
+      <div class="card-title">📋 我的订单</div>
+      <div id="order_list" class="order-list"></div>
+    </div>
+
+    <!-- Admin card (only visible to admin) -->
+    <div id="page_admin" style="display:none">
+    <div id="adminCard" class="card" style="grid-column:1 / -1">
+      <div class="card-title">🛡️ 管理后台</div>
+      <div class="nav-row">
+        <button class="nav-btn" onclick="adminTab('topupCheck')">充值待审</button>
+        <button class="nav-btn" onclick="adminTab('u2l')">购汇待审</button>
+        <button class="nav-btn" onclick="adminTab('l2u')">售汇待审</button>
+        <button class="nav-btn" onclick="adminTab('withdraw')">提现待审</button>
+        <button class="nav-btn" onclick="adminTab('ref')">推广统计</button>
+        <button class="nav-btn" onclick="rebuildBalances()" style="background:#ff6b35">余额重建</button>
+      </div>
+      <div id="admin_content" class="order-list"></div>
+    </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = window.ENV?.SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = window.ENV?.SUPABASE_ANON_KEY || '';
+const CURRENCIES = ['IRR','SAR','AED','KWD','QAR','EGP','IQD','JOD','OMR'];
+const CNAMES = {IRR:'伊朗里亚尔',SAR:'沙特里亚尔',AED:'阿联酋迪拉姆',KWD:'科威特第纳尔',QAR:'卡塔尔里亚尔',EGP:'埃及镑',IQD:'伊拉克第纳尔',JOD:'约旦第纳尔',OMR:'阿曼里亚尔'};
+const TRC20 = '0x2395d729411aF3a4D8f9FBe5ad76B8A052aeD2A8';
+const MIN = 100; const FEERATE = { '24h': .03, '72h': .01 };
+let sb = null, user = null, rates = {}, lock = false;
+
+function t(cn,en){ return cn; }
+function toast(msg){ const d=document.getElementById('toast_msg')||(document.body.insertAdjacentHTML('beforeend','<div id="toast_msg" style="position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#1a3a6e;color:#fff;padding:12px 24px;border-radius:8px;z-index:99999;font-size:14px;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,0.3)"></div>'),setTimeout(()=>{const t=document.getElementById('toast_msg');if(t)t.remove()},3000)); const el=document.getElementById('toast_msg');if(el)el.innerText=msg; }
+function switchTab(t){
+  document.getElementById('loginPanel').classList.toggle('hidden', t!=='login');
+  document.getElementById('regPanel').classList.toggle('hidden', t!=='reg');
+  document.getElementById('loginTab').classList.toggle('active', t==='login');
+  document.getElementById('regTab').classList.toggle('active', t==='reg');
+}
+function validateLogin(){ btn_login.disabled=!(login_user.value.trim() && login_pwd.value.trim().length>=6); }
+function validateReg(){ btn_reg.disabled=!(reg_user.value.trim() && reg_pwd.value.trim().length>=6); }
+
+async function init(){
+  if(!SUPABASE_URL || !SUPABASE_ANON_KEY){ toast('缺少Supabase配置'); return; }
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const { error } = await sb.from('users').select('id').limit(1);
+  if(error){ toast('Supabase连接失败'); return; }
+  const { data:{session} } = await sb.auth.getSession();
+  if(session) onLogin(session.user);
+}
+
+const safeLogin = (async()=>{
+  const u=login_user.value.trim(), p=login_pwd.value.trim();
+  if(!u || !p){ toast('请输入账号密码'); return; }
+  btn_login.innerText='登录中...'; btn_login.disabled=true;
+  try{
+    const { error } = await sb.auth.signInWithPassword({email:`${u}@mid-east-exchange.com`,password:p});
+    if(error) throw error;
+    const { data } = await sb.auth.getUser();
+    onLogin(data.user);
+  }catch(e){ toast(e.message||'登录失败'); }
+  finally{ btn_login.innerText='登录'; btn_login.disabled=false; }
+});
+
+const safeRegister = (async()=>{
+  const rawU=reg_user.value.trim().replace(/@.+$/,''), p=reg_pwd.value.trim(), phone=reg_phone.value.trim(), ref=reg_ref.value.trim();
+  const u=rawU.replace(/[^a-zA-Z0-9]/g,'');
+  if(!u || !p){ toast('请填写完整'); return; }
+  if(u.length<3){ toast('用户名至少3位'); return; }
+  btn_reg.innerText='注册中...'; btn_reg.disabled=true;
+  try{
+    const { data:exist } = await sb.from('users').select('username').eq('username',u).single();
+    if(exist) throw new Error('账号已存在');
+    const { data:auth, error } = await sb.auth.signUp({email:`${u}@mid-east-exchange.com`,password:p,options:{data:{username:u}}});
+    if(error) throw error;
+    const { error:insertErr } = await sb.from('users').insert({id:auth.user.id,username:u,phone,ref,usdt:0,irr:0,sar:0,aed:0,kwd:0,qar:0,egp:0,iqd:0,jod:0,omr:0,total_reward:0});
+    if(insertErr) { /* row may already exist */ }
+    toast('注册成功，请登录'); switchTab('login');
+  }catch(e){ toast(e.message||'注册失败'); }
+  finally{ btn_reg.innerText='注册'; btn_reg.disabled=false; }
+});
+
+async function onLogin(authUser){
+  const { data } = await sb.from('users').select('*').eq('id',authUser.id).single();
+  user = data;
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('main-screen').style.display='flex';
+  if(authUser.app_metadata?.role==='admin'){
+    document.getElementById('adminCard').classList.remove('hidden');
+    document.getElementById('mainNav').insertAdjacentHTML('beforeend','<button class="nav-btn" onclick="showPage(\'admin\')" id="tab_admin">⚙️ 管理</button>');
+  }
+  document.getElementById('userNameDisplay').innerText = user.username;
+  topAddrDisplay.innerText = TRC20;
+  loadWallet(); fetchRates();
+  // populate selects
+  CURRENCIES.forEach(c=>{ u2l_cur.innerHTML+=`<option value="${c}">${c} ${CNAMES[c]}</option>`; l2u_cur.innerHTML+=`<option value="${c}">${c} ${CNAMES[c]}</option>`; });
+}
+
+async function logout(){ await sb.auth.signOut(); user=null; document.getElementById('main-screen').style.display='none'; document.getElementById('login-screen').style.display='flex'; }
+
+async function loadWallet(){
+  const { data } = await sb.from('users').select('*').eq('id',user.id).single();
+  if(data) user=data;
+  bal_usdt.innerText = Number(user.usdt||0).toFixed(2);
+  let h=''; CURRENCIES.forEach(c=>h+=`<div class="currency-item"><span>${c}</span><b>${Number(user[c.toLowerCase()]||0).toFixed(2)}</b></div>`);
+  currencyBalances.innerHTML=h;
+}
+
+async function fetchRates(){
+  try{
+    const r=await fetch('https://open.er-api.com/v6/latest/USD'), d=await r.json();
+    CURRENCIES.forEach(c=>{ rates[c]=d.rates[c]||1; });
+    let h=''; CURRENCIES.forEach(c=>h+=`${c} ${CNAMES[c]}: ${Number(rates[c]).toFixed(4)}<br>`);
+    rate_body.innerHTML=h||'加载失败';
+  }catch(e){ rate_body.innerHTML='汇率加载失败'; }
+}
+
+function calcU2L(){ const amt=+u2l_amt.value||0, cur=u2l_cur.value, fee=FEERATE[u2l_speed.value]||0, r=rates[cur]||1; u2l_result.value=(amt*r*(1-fee)).toFixed(2); }
+function calcL2U(){ const amt=+l2u_amt.value||0, cur=l2u_cur.value, fee=FEERATE[l2u_speed.value]||0, r=rates[cur]||1; l2u_result.value=(amt/r*(1-fee)).toFixed(2); }
+
+async function safeSubmitTopup(){
+  const amt=+top_amt.value; if(amt<10){ toast('最低10U'); return; }
+  await sb.from('topups').insert({user_id:user.id,amount:amt,status:'待审核',created_at:new Date().toISOString()});
+  toast('已提交');
+  showOrders();
+}
+
+async function safeSubmitU2L(){
+  const amt=+u2l_amt.value, cur=u2l_cur.value, speed=u2l_speed.value, fee=FEERATE[speed]||0;
+  if(amt<MIN){ toast('最低'+MIN+'U'); return; }
+  if(amt>user.usdt){ toast('余额不足'); return; }
+  await sb.from('users').update({usdt:user.usdt-amt}).eq('id',user.id);
+  await sb.from('u2l_orders').insert({user_id:user.id,amount:amt,currency:cur,speed,fee,submit_rate:rates[cur]||1,status:'待审核',created_at:new Date().toISOString()});
+  const { data } = await sb.from('users').select('*').eq('id',user.id).single(); user=data;
+  toast('已提交'); loadWallet(); showOrders();
+}
+
+async function safeSubmitL2U(){
+  const cur=l2u_cur.value, amt=+l2u_amt.value, speed=l2u_speed.value, fee=FEERATE[speed]||0, r=rates[cur]||1;
+  const usdt=amt/r; if(usdt<MIN){ toast('最低等值'+MIN+'U'); return; }
+  const f=cur.toLowerCase(); if(amt>(user[f]||0)){ toast('余额不足'); return; }
+  await sb.from('users').update({[f]:user[f]-amt}).eq('id',user.id);
+  await sb.from('l2u_orders').insert({user_id:user.id,amount:amt,currency:cur,speed,fee,submit_rate:r,status:'待审核',created_at:new Date().toISOString()});
+  const { data } = await sb.from('users').select('*').eq('id',user.id).single(); user=data;
+  toast('已提交'); loadWallet(); showOrders();
+}
+
+function checkAddr(){ btn_wd.disabled=!/^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(wd_addr.value.trim()); }
+
+async function safeSubmitWD(){
+  btn_wd.disabled=true; btn_wd.innerText='提交中...';
+  const amt=+wd_amt.value, addr=wd_addr.value.trim();
+  if(!amt||amt>user.usdt){ toast('余额不足'); btn_wd.disabled=false; btn_wd.innerText='提交提现'; return; }
+  const { data:pending } = await sb.from('withdraws').select('id').eq('user_id',user.id).eq('status','待处理').limit(1);
+  if(pending?.length){ toast('已有待处理提现，请等待处理'); btn_wd.disabled=false; btn_wd.innerText='提交提现'; return; }
+  try{
+    await sb.from('users').update({usdt:user.usdt-amt}).eq('id',user.id);
+    await sb.from('withdraws').insert({user_id:user.id,amount:amt,address:addr,status:'待处理',created_at:new Date().toISOString()});
+    const { data } = await sb.from('users').select('*').eq('id',user.id).single(); user=data;
+    toast('提现已提交'); loadWallet(); showOrders();
+  }catch(e){ toast('提交失败:'+e.message); }
+  finally{ btn_wd.disabled=false; btn_wd.innerText='提交提现'; }
+}
+
+async function showOrders(){
+  const [t,u2,l2,wd,rew]=await Promise.all([
+    sb.from('topups').select('*').eq('user_id',user.id).order('created_at',{ascending:false}),
+    sb.from('u2l_orders').select('*').eq('user_id',user.id).order('created_at',{ascending:false}),
+    sb.from('l2u_orders').select('*').eq('user_id',user.id).order('created_at',{ascending:false}),
+    sb.from('withdraws').select('*').eq('user_id',user.id).order('created_at',{ascending:false}),
+    sb.from('reward_logs').select('*').eq('to_user_id',user.id).order('created_at',{ascending:false}).limit(20)
+  ]);
+  let h='';
+  t.data?.forEach(o=>h+=orderLine('充值',o.amount+'U',o.status,o.created_at));
+  u2.data?.forEach(o=>h+=orderLine('U→'+o.currency,o.amount+'U',o.status,o.created_at));
+  l2.data?.forEach(o=>h+=orderLine(o.currency+'→U',o.amount,o.status,o.created_at));
+  wd.data?.forEach(o=>h+=orderLine('提现',o.amount+'U',o.status,o.created_at));
+  rew.data?.forEach(r=>h+=orderLine('返佣','+'+Number(r.amount_usdt||0).toFixed(2)+'U','已通过',r.created_at));
+  order_list.innerHTML=h||'暂无记录';
+}
+
+function orderLine(type,amount,status,time){
+  const done=status==='已通过';
+  return `<div class="order-item">${new Date(time).toLocaleString()} <b>${type}</b> ${amount} <span class="order-status ${done?'done':'pending'}">${status}</span></div>`;
+}
+
+async function adminTab(t){
+  let h='', wheres='';
+  if(t==='topupCheck') wheres="status=eq.待审核";
+  if(t==='u2l') wheres="status=eq.待审核";
+  if(t==='l2u') wheres="status=eq.待审核";
+  if(t==='withdraw') wheres="status=eq.待处理";
+  if(!wheres){ admin_content.innerHTML='无数据'; return; }
+  let table=t; if(t==='topupCheck') table='topups';
+  if(t==='u2l') table='u2l_orders'; if(t==='l2u') table='l2u_orders'; if(t==='withdraw') table='withdraws';
+  // For withdraw admin view, show ALL rows regardless of status
+  if(t==='withdraw'){
+    const { data } = await sb.from(table).select('*, users(username)').order('created_at',{ascending:false});
+    data?.forEach(o=>{ h+=`<div class="order-item">${o.users?.username||'--'} 提现${o.amount}U ${o.status} 地址:${o.address} <button class="approve-btn ok" onclick="approveFn('${table}',${o.id})">通过</button> <button class="approve-btn no" onclick="rejectFn('${table}',${o.id})">驳回</button></div>`; });
+  } else {
+    const { data } = await sb.from(table).select('*, users(username)').eq('status','待审核').order('created_at',{ascending:false});
+    data?.forEach(o=>{
+      const label=table==='topups'?`充值${o.amount}U`:table==='u2l_orders'?`U→${o.currency}${o.amount}U`:table==='l2u_orders'?`${o.currency}→U ${o.amount}`:`提现${o.amount}U`;
+      h+=`<div class="order-item">${o.users?.username||'--'} ${label} ${o.status} <button class="approve-btn ok" onclick="approveFn('${table}',${o.id})">通过</button> <button class="approve-btn no" onclick="rejectFn('${table}',${o.id})">驳回</button></div>`;
+    });
+  }
+  admin_content.innerHTML=h||'无待审';
+}
+
+async function approveFn(table,id){
+  const { data:order } = await sb.from(table).select('*').eq('id',id).single();
+  const { error } = await sb.from(table).update({status:'已通过'}).eq('id',id);
+  if(error){ alert('操作失败: '+error.message); return; }
+  if(order){
+    const uid = order.user_id;
+    if(table==='topups'){
+      const { data:u } = await sb.from('users').select('usdt').eq('id',uid).single();
+      if(u) await sb.from('users').update({usdt:(u.usdt||0)+Number(order.amount)}).eq('id',uid);
+    } else if(table==='u2l_orders'){
+      const fld = (order.currency||'IRR').toLowerCase();
+      const { data:u } = await sb.from('users').select(fld).eq('id',uid).single();
+      if(u) await sb.from('users').update({[fld]:(u[fld]||0)+Number(order.amount)}).eq('id',uid);
+    } else if(table==='l2u_orders'){
+      const fld = (order.currency||'IRR').toLowerCase();
+      const { data:u } = await sb.from('users').select('usdt,'+fld).eq('id',uid).single();
+      const usdtAmt = Number(order.amount) / Number(order.submit_rate||1) * (1 - Number(order.fee||0));
+      const newUsdt = (u.usdt||0) + usdtAmt;
+      const newFld = (u[fld]||0) - Number(order.amount);
+      await sb.from('users').update({usdt:newUsdt,[fld]:newFld}).eq('id',uid);
+    }
+  }
+  toast('已通过');
+  const t2 = table==='topups'?'topupCheck':table;
+  adminTab(t2); loadWallet(); showOrders();
+}
+
+async function rebuildBalances(){
+  if(!confirm('确认重建所有用户余额？将根据已通过的充值记录重新计算。')) return;
+  const { error } = await sb.rpc('rebuild_balances');
+  if(error){ toast('失败: '+error.message); }
+  else { toast('余额重建完成'); loadWallet(); adminTab('topupCheck'); }
+}
+
+async function rejectFn(table,id){
+  await sb.from(table).update({status:'已驳回'}).eq('id',id);
+  toast('已驳回'); const t2 = table==='topups'?'topupCheck':table; adminTab(t2);
+}
+
+function showPage(p){
+  ['wallet','topup','u2l','l2u','wd','orders','admin','rates'].forEach(k=>{
+    const el=document.getElementById('page_'+k);
+    if(el) el.style.display=k===p?'block':'none';
+  });
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const btn=document.getElementById('tab_'+p);
+  if(btn) btn.classList.add('active');
+}
+
+const LANG={
+  zh:{t:'中东货币兑换',tabL:'登录',tabR:'注册'},
+  en:{t:'Mid-East Exchange',tabL:'Login',tabR:'Register'},
+  ar:{t:'صرف العملات',tabL:'تسجيل الدخول',tabR:'التسجيل'}
+};
+let curL='zh';
+function setLang(v){
+  curL=v; const t=LANG[v];
+  if(document.getElementById('siteTitle')) document.getElementById('siteTitle').innerText=t.t;
+  document.documentElement.dir=v==='ar'?'rtl':'ltr';
+  document.documentElement.lang=v;
+}
+window.onload=()=>{ init(); fetchRates(); setInterval(fetchRates,30000); };
+</script>
+</body>
+</html>

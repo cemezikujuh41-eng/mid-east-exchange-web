@@ -1,0 +1,11 @@
+{
+  "name": "mid-east-exchange-web",
+  "version": "2.0.0",
+  "private": true,
+  "dependencies": {
+    "express": "^4.18.0",
+    "cors": "^2.8.5",
+    "jsonwebtoken": "^9.0.0",
+    "@supabase/supabase-js": "^2.0.0"
+  }
+}
