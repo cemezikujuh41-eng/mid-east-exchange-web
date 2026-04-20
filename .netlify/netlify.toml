@@ -7,7 +7,7 @@ redirects = []
 [functions."*"]
 
 [build]
-publish = "/Users/wu/.openclaw/workspace/mid-east-exchange-web"
+publish = "."
 publishOrigin = "default"
 
 [build.environment]
